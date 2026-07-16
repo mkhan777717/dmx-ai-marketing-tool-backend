@@ -17,7 +17,7 @@ class Settings(BaseSettings):
 
     # Supabase
     SUPABASE_URL: str | None = None
-    SUPABASE_KEY: str | None = None
+    SUPABASE_ANON_KEY: str | None = None
     SUPABASE_SERVICE_ROLE_KEY: str | None = None
 
     model_config = SettingsConfigDict(
