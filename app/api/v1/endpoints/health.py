@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from app.schemas.health import HealthResponse
 
 router = APIRouter()
 
@@ -10,8 +11,11 @@ async def root():
     }
 
 
-@router.get("/health")
+@router.get(
+    "/health",
+    response_model=HealthResponse,
+)
 async def health():
-    return {
-        "status": "healthy"
-    }
+    return HealthResponse(
+        status="healthy"
+    )
