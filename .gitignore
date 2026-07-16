@@ -1,16 +1,4 @@
-# Virtual Environment
-.venv/
-
-# Python cache
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Environment variables
+# Environments
 .env
-
-# IDE
-.vscode/
-
-# macOS
-.DS_Store
+.env.*
+!.env.example
