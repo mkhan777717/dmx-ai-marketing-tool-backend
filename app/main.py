@@ -1,38 +1,33 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from app.core.config import settings
-from app.core.exceptions import setup_exception_handlers
-from app.core.logging_config import setup_logging
-from app.middleware.request_id import RequestIDMiddleware
 
-setup_logging()
+from app.api.v1.api import api_router
+from app.core.logger import logger
 
-def create_app() -> FastAPI:
-    app = FastAPI(
-        title=settings.PROJECT_NAME,
-        openapi_url=f"{settings.API_V1_STR}/openapi.json",
-        description="Enterprise SaaS Backend for AI-Powered Digital Marketing Platform",
-        version="0.1.0",
-    )
+from app.middleware.cors import add_cors_middleware
+from app.middleware.logging import log_requests
+from app.middleware.timing import add_process_time_header
 
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"], # In production, restrict this
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-    
-    app.add_middleware(RequestIDMiddleware)
-    setup_exception_handlers(app)
+from app.exceptions.handlers import register_exception_handlers
 
-    @app.get("/health", tags=["Health"])
-    async def health_check():
-        return {"status": "ok", "environment": settings.ENVIRONMENT}
-        
-    from app.api.v1.api import api_router
-    app.include_router(api_router, prefix=settings.API_V1_STR)
+logger.info("Starting AI Marketing Suite Backend")
 
-    return app
+app = FastAPI(
+    title="AI Marketing Suite API",
+    version="1.0.0",
+    description="Backend API for AI Marketing Suite",
+)
 
-app = create_app()
+# Register Middleware
+app.middleware("http")(log_requests)
+app.middleware("http")(add_process_time_header)
+
+add_cors_middleware(app)
+
+#exception handlers
+register_exception_handlers(app)
+
+# Register API Routes
+app.include_router(
+    api_router,
+    prefix="/api/v1",
+)

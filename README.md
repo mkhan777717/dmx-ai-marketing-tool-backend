@@ -1,29 +1,44 @@
-# AI-Powered Digital Marketing Platform Backend
+# AI Marketing Suite - Backend
 
-## Overview
-Enterprise SaaS Backend built with FastAPI and Clean Architecture.
+Backend service for the AI Marketing Suite.
 
-## Features
-- Multi-Tenant Workspaces
-- JWT Authentication & RBAC
-- Async PostgreSQL
-- Redis Integration
+## Tech Stack
+
+- FastAPI
+- Python 3.13
+- PostgreSQL (planned)
+- Modular Monolith Architecture
 
 ## Setup
 
-1. Install dependencies:
-   ```bash
-   poetry install
-   ```
-2. Start services (PostgreSQL, Redis):
-   ```bash
-   docker-compose up -d
-   ```
-3. Run Alembic migrations (after setup):
-   ```bash
-   poetry run alembic upgrade head
-   ```
-4. Run server:
-   ```bash
-   poetry run uvicorn app.main:app --reload
-   ```
+### Create Virtual Environment
+
+```bash
+py -m venv .venv
+```
+
+### Activate
+
+Windows
+
+```bash
+.venv\Scripts\Activate.ps1
+```
+
+### Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### Run
+
+```bash
+uvicorn app.main:app --reload
+```
+
+### Swagger
+
+```
+http://127.0.0.1:8000/docs
+```
