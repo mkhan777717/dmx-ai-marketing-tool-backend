@@ -1,27 +1,38 @@
-from typing import AsyncGenerator
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from app.core.config import settings
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
-engine = create_async_engine(
-    settings.ASYNC_DATABASE_URI,
-    echo=settings.ENVIRONMENT == "development",
+from app.config.settings import settings
+
+engine = None
+SessionLocal = None
+
+if settings.DATABASE_URL:
+    engine = create_engine(
+    settings.DATABASE_URL,
+    echo=settings.DEBUG,
     future=True,
     pool_pre_ping=True,
-)
+    connect_args={"sslmode": "require"},
+    )
 
-AsyncSessionLocal = async_sessionmaker(
-    bind=engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-    autoflush=False,
-)
+    SessionLocal = sessionmaker(
+        bind=engine,
+        autoflush=False,
+        autocommit=False,
+    )
 
-async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
-    async with AsyncSessionLocal() as session:
-        try:
-            yield session
-        except Exception:
-            await session.rollback()
-            raise
-        finally:
-            await session.close()
+
+def get_db():
+    """
+    Dependency that provides a SQLAlchemy database session.
+    """
+
+    if SessionLocal is None:
+        raise RuntimeError("Database is not configured.")
+
+    db = SessionLocal()
+
+    try:
+        yield db
+    finally:
+        db.close()

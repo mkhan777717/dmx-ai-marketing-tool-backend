@@ -1,4 +1,12 @@
-# Environments
+# Virtual Environment
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment variables
 .env
 .env.*
 !.env.example
@@ -12,6 +20,9 @@ node_modules/
 
 # OS
 .DS_Store
+
+# VS Code
+.vscode/
 
 # Logs and Temp
 logs/
