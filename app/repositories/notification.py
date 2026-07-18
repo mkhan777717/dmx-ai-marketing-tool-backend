@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from app.repositories.base import BaseRepository
 from app.models.notification import Notification
-
+from app.constants.enums import NotificationType
 
 class NotificationRepository(BaseRepository[Notification]):
     async def get_unread_for_user(self, db: AsyncSession, user_id: uuid.UUID, limit: int = 50) -> Sequence[Notification]:

@@ -1,6 +1,6 @@
-
+from typing import Any
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import computed_field
+from pydantic import PostgresDsn, computed_field
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "AI Marketing Platform"

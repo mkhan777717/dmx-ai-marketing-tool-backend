@@ -4,7 +4,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB
 from app.models.base import Base
-from app.models.mixins import TenantMixin
+from app.models.mixins import TimestampMixin, TenantMixin
 
 if TYPE_CHECKING:
     from app.models.workspace import Workspace

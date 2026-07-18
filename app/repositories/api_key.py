@@ -37,7 +37,7 @@ class ApiKeyRepository(BaseRepository[ApiKey]):
     async def get_active_by_workspace(self, db: AsyncSession, workspace_id: uuid.UUID) -> Sequence[ApiKey]:
         stmt = select(self.model).where(
             self.model.workspace_id == workspace_id,
-            self.model.is_active
+            self.model.is_active == True
         )
         result = await db.execute(stmt)
         return result.scalars().all()
