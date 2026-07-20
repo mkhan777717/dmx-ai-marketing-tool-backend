@@ -19,6 +19,7 @@ if settings.DATABASE_URL:
         bind=engine,
         autoflush=False,
         autocommit=False,
+        expire_on_commit=False,
     )
 
 
