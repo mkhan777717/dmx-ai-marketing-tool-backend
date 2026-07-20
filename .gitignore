@@ -11,8 +11,25 @@ __pycache__/
 .env.*
 !.env.example
 
+# Python
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+
 # VS Code
 .vscode/
 
-# macOS
-.DS_Store
+# Logs and Temp
+logs/
+tmp/
+cache/
+
+# Storage
+uploads/
+local storage
+generated files
