@@ -1,6 +1,5 @@
 import uuid
 import base64
-from app import db
 from cryptography.fernet import Fernet
 from typing import Sequence
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,10 +13,14 @@ class ApiKeyRepository(BaseRepository[ApiKey]):
         super().__init__(model)
         # We need a 32 url-safe base64-encoded byte string for Fernet
         key = settings.ENCRYPTION_KEY
-        if len(key) != 44:
-            # Fallback for dev if not configured properly, in prod it should crash explicitly
-            key = base64.urlsafe_b64encode(b'0' * 32).decode('utf-8')
-        self.fernet = Fernet(key.encode('utf-8'))
+
+        if not key:
+            raise ValueError("ENCRYPTION_KEY is not configured.")
+
+        try:
+            self.fernet = Fernet(key.encode("utf-8"))
+        except Exception as exc:
+            raise ValueError("Invalid ENCRYPTION_KEY.") from exc
 
     def encrypt_secret(self, secret: str) -> str:
         return self.fernet.encrypt(secret.encode('utf-8')).decode('utf-8')
@@ -25,7 +28,13 @@ class ApiKeyRepository(BaseRepository[ApiKey]):
     def decrypt_secret(self, encrypted_secret: str) -> str:
         return self.fernet.decrypt(encrypted_secret.encode('utf-8')).decode('utf-8')
 
-    async def create_api_key(self, db: AsyncSession, obj_in: dict) -> ApiKey:
+    from typing import Any
+
+    async def create_api_key(
+        self,
+        db: AsyncSession,
+        obj_in: dict[str, Any],
+    ) -> ApiKey:
         secret = obj_in.pop("secret")
         obj_in["encrypted_secret"] = self.encrypt_secret(secret)
         

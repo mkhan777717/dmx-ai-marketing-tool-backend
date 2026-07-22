@@ -7,6 +7,9 @@ from app.models.base import Base
 from app.models.mixins import TimestampMixin, TenantMixin, AuditMixin
 from app.constants.enums import ScheduleStatus
 
+from sqlalchemy import Enum as SQLEnum
+
+
 class CampaignSchedule(Base, TimestampMixin, TenantMixin, AuditMixin):
     __tablename__ = "campaign_schedules"
 
@@ -18,7 +21,11 @@ class CampaignSchedule(Base, TimestampMixin, TenantMixin, AuditMixin):
     publish_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     timezone: Mapped[str] = mapped_column(String, default="UTC", nullable=False)
     
-    status: Mapped[ScheduleStatus] = mapped_column(String, default=ScheduleStatus.SCHEDULED, nullable=False)
+    status = mapped_column(
+    SQLEnum(ScheduleStatus),
+    default=ScheduleStatus.SCHEDULED,
+    nullable=False,
+)
     
     error_message: Mapped[str | None] = mapped_column(String, nullable=True)
     retry_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

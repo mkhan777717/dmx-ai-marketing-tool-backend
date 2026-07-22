@@ -9,11 +9,11 @@ from app.models.notification import Notification
 
 class NotificationRepository(BaseRepository[Notification]):
     async def get_unread_for_user(
-    self,
-    db: AsyncSession,
-    user_id: uuid.UUID,
-    limit: int = 50,
-) -> Sequence[Notification]:
+        self,
+        db: AsyncSession,
+        user_id: uuid.UUID,
+        limit: int = 50,
+    ) -> Sequence[Notification]:
         stmt = select(self.model).where(
             self.model.user_id == user_id,
             self.model.read_at.is_(None)
@@ -39,6 +39,6 @@ class NotificationRepository(BaseRepository[Notification]):
         
         result = await db.execute(stmt)
         await db.flush()
-        return result.rowcount
+        return result.rowcount or 0
 
 notification_repo = NotificationRepository(Notification)
