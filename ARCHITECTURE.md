@@ -2,9 +2,11 @@
 
 ## Overview
 
-This document defines the initial backend architecture for the AI Marketing Suite.
+This document defines the backend architecture for the **AI Marketing Suite**, an AI-powered Digital Marketing SaaS platform.
 
-The project is being developed from scratch as an AI-powered Digital Marketing SaaS platform. The primary objective is to build a scalable, maintainable, and modular backend that can support future growth while allowing rapid MVP development.
+The backend is designed with scalability, maintainability, and modularity as core principles. The project follows a **Modular Monolith Architecture**, allowing rapid MVP development while keeping the system flexible enough to evolve into a microservices architecture when required.
+
+This document reflects the current implementation status and serves as the primary architectural reference for backend development.
 
 ---
 
@@ -12,48 +14,64 @@ The project is being developed from scratch as an AI-powered Digital Marketing S
 
 - Build a scalable AI-powered Digital Marketing SaaS platform.
 - Support multi-tenancy for organizations and agencies.
-- Maintain clean and modular architecture.
-- Enable future integration of AI services.
-- Keep the codebase easy to maintain and extend.
-- Design the system to scale from MVP to enterprise level.
+- Maintain clean, modular, and extensible architecture.
+- Enable future AI service integrations.
+- Keep business logic separated from infrastructure.
+- Support seamless migration from MVP to enterprise-scale architecture.
 
 ---
 
 # Architecture Decision
 
-The backend will follow a **Modular Monolith Architecture**.
+The backend follows a **Modular Monolith Architecture**.
 
-This approach provides:
+### Benefits
 
 - Faster MVP development
-- Easier collaboration between developers
-- Simpler deployment
-- Easier debugging
+- Easier collaboration across developers
+- Simpler deployment and maintenance
 - Lower infrastructure complexity
-- Ability to migrate individual modules into microservices in the future if required
+- Clear module boundaries
+- Easier debugging
+- Future migration to microservices when required
 
 ---
 
 # Technology Stack
 
 | Component | Technology |
-|----------|------------|
+|------------|------------|
 | Framework | FastAPI |
 | Language | Python 3.13 |
 | Package Manager | pip |
 | Database | PostgreSQL |
+| ORM | SQLAlchemy 2.x (Async ORM) |
+| Database Driver | asyncpg |
 | API Style | REST |
+| Testing | pytest + pytest-asyncio |
 | Version Control | Git |
 | Architecture | Modular Monolith |
 
-Future integrations:
+### Current Implementation
 
+- FastAPI application
+- Async SQLAlchemy ORM
+- Async database sessions
+- Repository Pattern
+- Modular project structure
+- Multi-tenant model foundation
+- Repository-based database access
+
+### Planned Integrations
+
+- Supabase Authentication
 - JWT Authentication
 - RBAC (Role-Based Access Control)
-- PostgreSQL ORM
-- Alembic Migrations
+- Alembic Database Migrations
 - Redis
 - Docker
+- Background Workers
+- AI Providers
 
 ---
 
@@ -67,7 +85,7 @@ main
      ├── feature/project-setup
      ├── feature/auth
      ├── feature/users
-     ├── feature/workspace
+     ├── feature/organization
      ├── feature/campaign
      ├── feature/social
      ├── feature/analytics
@@ -76,24 +94,25 @@ main
      └── feature/*
 ```
 
-### Branch Purpose
+## Branch Purpose
 
-**main**
+### main
 
 - Production-ready code.
 
-**dev**
+### dev
 
 - Integration branch for completed features.
 
-**feature/***
+### feature/*
 
 - Individual feature development.
-- Every new module should be developed inside its own feature branch.
+- Every feature or module should be developed in its own branch.
+- Pull Requests should target the `dev` branch.
 
 ---
 
-# Proposed Backend Structure
+# Project Structure
 
 ```
 backend/
@@ -102,19 +121,23 @@ backend/
 │   ├── api/
 │   │   └── v1/
 │   │
-│   ├── config/
+│   ├── constants/
 │   │
 │   ├── core/
 │   │
 │   ├── db/
 │   │
-│   ├── modules/
+│   ├── models/
+│   │
+│   ├── repositories/
+│   │
+│   ├── services/
 │   │
 │   ├── middleware/
 │   │
-│   ├── utils/
-│   │
 │   ├── exceptions/
+│   │
+│   ├── utils/
 │   │
 │   └── main.py
 │
@@ -128,33 +151,116 @@ backend/
 
 ---
 
+# Layered Architecture
+
+The backend follows a layered architecture to ensure proper separation of responsibilities.
+
+```
+API Layer
+     │
+     ▼
+Service Layer
+     │
+     ▼
+Repository Layer
+     │
+     ▼
+SQLAlchemy Async ORM
+     │
+     ▼
+PostgreSQL
+```
+
+### API Layer
+
+Responsible for:
+
+- HTTP endpoints
+- Request validation
+- Response serialization
+- Authentication & authorization
+- Dependency injection
+
+### Service Layer
+
+Responsible for:
+
+- Business logic
+- Workflow orchestration
+- Integrating multiple repositories
+- Calling AI providers
+- Scheduling background tasks
+
+### Repository Layer
+
+Responsible for:
+
+- Database operations
+- CRUD functionality
+- Query abstraction
+- Data access isolation
+
+Business logic should **not** be implemented inside repositories.
+
+### Database Layer
+
+Responsible for:
+
+- Async SQLAlchemy models
+- Async sessions
+- Entity relationships
+- Database transactions
+
+---
+
+# Multi-Tenant Architecture
+
+The platform is designed as a multi-tenant SaaS application.
+
+Tenant-aware models inherit from a shared `TenantMixin`, which provides the common tenant identifier.
+
+Current tenant identifier:
+
+```
+organization_id
+```
+
+This enables:
+
+- Organization-level data isolation
+- Shared infrastructure
+- Future support for agencies managing multiple organizations
+
+---
+
 # Planned Modules
 
-The backend will be divided into feature-based modules.
+The backend is divided into feature-based modules.
 
-Planned modules include:
+Current and planned modules include:
 
 - Authentication
+- Organizations
 - Users
-- Workspace
 - Campaign Management
+- Campaign Scheduler
 - Social Media
-- Email Marketing
-- SEO
-- CRM
-- AI Assistant
-- Analytics
-- Billing
 - Notifications
+- Analytics
+- CRM
+- SEO
+- Email Marketing
+- AI Assistant
+- Billing
 - Admin
 
-Each module should remain independent and encapsulate its own business logic.
+Each module should encapsulate its own business logic and remain loosely coupled with other modules.
 
 ---
 
 # API Versioning
 
-API endpoints should be versioned from the beginning.
+API endpoints are versioned from the beginning.
 
 Example:
 
@@ -166,7 +272,43 @@ Example:
 /api/v1/campaigns
 ```
 
-Future versions can be introduced without breaking existing clients.
+Future API versions can be introduced without breaking existing clients.
+
+---
+
+# Repository Pattern
+
+The project follows the Repository Pattern.
+
+Responsibilities include:
+
+- CRUD operations
+- Query abstraction
+- Async database interaction
+- Transaction management
+
+Current repositories include:
+
+- API Key Repository
+- Audit Log Repository
+- Campaign Schedule Repository
+- Notification Repository
+- Plan Repository
+- User Preference Repository
+
+Additional repositories will be added as new modules are implemented.
+
+---
+
+# Database Design Principles
+
+- Use UUIDs as primary keys.
+- Prefer SQLAlchemy Async ORM.
+- Use explicit relationships.
+- Keep models lightweight.
+- Move database logic into repositories.
+- Use migrations for schema evolution.
+- Maintain tenant isolation using `organization_id`.
 
 ---
 
@@ -174,76 +316,173 @@ Future versions can be introduced without breaking existing clients.
 
 - Follow clean architecture principles.
 - Keep business logic separate from API routes.
-- Prefer reusable and modular components.
-- Maintain a clear separation of concerns.
-- Keep configuration outside the source code.
-- Write maintainable and readable code.
-- Follow consistent naming conventions.
-- Add type hints wherever possible.
+- Prefer reusable components.
+- Keep modules independent.
+- Separate concerns clearly.
+- Maintain readable and maintainable code.
+- Use dependency injection where appropriate.
+- Write type-safe code.
+- Prefer async implementations for I/O operations.
 
 ---
 
 # Coding Standards
 
 - Follow PEP 8.
-- Use snake_case for file names.
-- Use descriptive class and function names.
+- Use snake_case for files and variables.
+- Use descriptive function and class names.
 - Avoid duplicated code.
 - Write meaningful commit messages.
 - Keep functions focused on a single responsibility.
+- Add type hints wherever possible.
+- Maintain consistent formatting across modules.
+
+---
+
+# Testing Strategy
+
+Testing is an essential part of backend development.
+
+Current testing includes:
+
+- Async database fixtures
+- Repository testing
+- API key encryption tests
+- Audit log repository tests
+- Notification repository tests
+
+Future testing goals:
+
+- Service layer tests
+- API integration tests
+- Authentication tests
+- End-to-end testing
+- Performance testing
 
 ---
 
 # Future Scalability
 
-The initial MVP will be developed as a Modular Monolith.
+The Modular Monolith architecture allows future migration to microservices.
 
-As the platform grows, modules such as:
+Potential future services include:
 
-- AI
-- Analytics
-- Billing
+- AI Service
+- Analytics Service
 - Notification Service
+- Billing Service
+- Scheduler Service
 
-can be extracted into independent microservices without requiring a complete backend rewrite.
+Each service can be extracted independently without major architectural changes.
 
 ---
 
-# Initial Development Roadmap
+# Current Implementation Status
 
-Phase 1
+## ✅ Completed
+
+- FastAPI backend initialization
+- Project structure
+- Async SQLAlchemy setup
+- Async database session management
+- Repository Pattern implementation
+- Core models
+- Repository implementations
+- Initial test suite
+- Multi-tenant foundation
+
+---
+
+## 🚧 In Progress
+
+- Supabase Authentication
+- RBAC
+- Organization Management
+- Campaign Scheduler
+- Service layer implementation
+- API dependency integration
+
+---
+
+## 📋 Planned
+
+- AI integrations
+- Analytics
+- CRM
+- Billing
+- Social Media integrations
+- Notification service enhancements
+- Background workers
+- Redis caching
+- Docker deployment
+
+---
+
+# Development Roadmap
+
+## Phase 1 — Foundation ✅
 
 - Backend initialization
 - Project structure
-- Configuration
-- Database setup
+- Configuration management
+- Async database setup
+- Repository layer
+- Initial models
+- Testing foundation
 
-Phase 2
+---
+
+## Phase 2 — Core Platform 🚧
 
 - Authentication
+- Organizations
 - User Management
 - RBAC
-- Workspace
+- API dependencies
 
-Phase 3
+---
+
+## Phase 3 — Marketing Features
 
 - Campaign Management
-- Social Media
-- AI Integration
+- Campaign Scheduler
+- Social Media integrations
+- AI integrations
 
-Phase 4
+---
+
+## Phase 4 — Business Features
 
 - Analytics
 - CRM
 - Billing
 - Notifications
+- Admin
 
 ---
 
-# Document Version
+# Architecture Notes
 
-Version: 1.0
+The architecture document should be updated whenever significant structural changes are introduced, including:
 
-Status: Draft
+- New modules
+- Layer changes
+- Repository changes
+- Database architecture updates
+- Authentication architecture
+- Multi-tenancy changes
+- Service architecture changes
 
-Prepared for initial backend project setup.
+This ensures the documentation always reflects the actual implementation.
+
+---
+
+# Document Information
+
+**Version:** 1.1
+
+**Status:** In Progress
+
+**Last Updated:** July 2026
+
+This document represents the current backend architecture and will continue to evolve alongside the project.
