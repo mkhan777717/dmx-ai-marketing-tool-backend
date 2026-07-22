@@ -10,7 +10,7 @@ from app.constants.enums import ScheduleStatus
 class CampaignSchedule(Base, TimestampMixin, TenantMixin, AuditMixin):
     __tablename__ = "campaign_schedules"
 
-    # workspace_id is inherited from TenantMixin
+    # organization_id is inherited from TenantMixin
     
     # Use string reference since campaign.py might not be present in this branch
     campaign_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("campaigns.id", ondelete="CASCADE"), nullable=False, unique=True)

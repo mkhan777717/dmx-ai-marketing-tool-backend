@@ -95,3 +95,15 @@ class PermissionAction(str, Enum):
     DELETE = "DELETE"
     MANAGE = "MANAGE"
     PUBLISH = "PUBLISH"
+
+class MembershipStatus(str, Enum):
+    PENDING = "PENDING"
+    ACTIVE = "ACTIVE"
+    SUSPENDED = "SUSPENDED"
+    REMOVED = "REMOVED"
+
+
+class UserRole(str, Enum):
+    OWNER = "OWNER"
+    ADMIN = "ADMIN"
+    MEMBER = "MEMBER"

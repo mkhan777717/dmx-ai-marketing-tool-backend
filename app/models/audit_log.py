@@ -5,9 +5,10 @@ from sqlalchemy import String, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB
 from app.models.base import Base
 from app.models.mixins import TimestampMixin, TenantMixin
+from app.models.organization import Organization
 
 if TYPE_CHECKING:
-    from app.models.workspace import Workspace
+    from app.models.organization import organization
     from app.models.user import User
 
 class AuditLog(Base, TenantMixin):
@@ -31,5 +32,5 @@ class AuditLog(Base, TenantMixin):
     from datetime import datetime
     created_at: Mapped[datetime] = mapped_column(default=get_utc_now, nullable=False)
     
-    workspace: Mapped["Workspace"] = relationship("Workspace", lazy="selectin")
+    workspace: Mapped["Organization"] = relationship("organization", lazy="selectin")
     user: Mapped["User"] = relationship("User", lazy="selectin")

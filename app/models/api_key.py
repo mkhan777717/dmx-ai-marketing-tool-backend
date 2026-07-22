@@ -1,4 +1,4 @@
-import uuid
+# import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -8,12 +8,12 @@ from app.models.mixins import TimestampMixin, TenantMixin
 from app.constants.enums import ApiProvider
 
 if TYPE_CHECKING:
-    from app.models.workspace import Workspace
+    from app.models.organization import Organization
 
 class ApiKey(Base, TimestampMixin, TenantMixin):
     __tablename__ = "api_keys"
 
-    # workspace_id inherited from TenantMixin
+    # organization_id inherited from TenantMixin
     provider: Mapped[ApiProvider] = mapped_column(SQLEnum(ApiProvider), index=True, nullable=False)
     key_name: Mapped[str] = mapped_column(String, nullable=False)
     
@@ -24,4 +24,4 @@ class ApiKey(Base, TimestampMixin, TenantMixin):
     
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True, nullable=False)
     
-    workspace: Mapped["Workspace"] = relationship("Workspace", lazy="selectin")
+    organization: Mapped["Organization"] = relationship("Organization", lazy="selectin")

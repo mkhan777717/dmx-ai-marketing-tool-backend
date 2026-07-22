@@ -1,5 +1,6 @@
 import uuid
 import base64
+from app import db
 from cryptography.fernet import Fernet
 from typing import Sequence
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -34,11 +35,19 @@ class ApiKeyRepository(BaseRepository[ApiKey]):
         await db.refresh(api_key)
         return api_key
 
-    async def get_active_by_workspace(self, db: AsyncSession, workspace_id: uuid.UUID) -> Sequence[ApiKey]:
-        stmt = select(self.model).where(
-            self.model.workspace_id == workspace_id,
-            self.model.is_active == True
+    async def get_active_by_organization(
+    self,
+    db: AsyncSession,
+    organization_id: uuid.UUID, 
+    ) -> Sequence[ApiKey]:
+        stmt = (
+            select(self.model)
+            .where(
+            self.model.organization_id == organization_id,
+            self.model.is_active.is_(True),
         )
+    )
+
         result = await db.execute(stmt)
         return result.scalars().all()
 

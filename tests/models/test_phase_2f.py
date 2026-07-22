@@ -3,7 +3,7 @@ import uuid
 import base64
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.user import User
-from app.models.workspace import Workspace
+from app.models.organization import Organization
 from app.models.api_key import ApiKey
 from app.models.audit_log import AuditLog
 from app.models.notification import Notification

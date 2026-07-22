@@ -7,7 +7,7 @@ from app.models.base import Base
 from app.models.mixins import TimestampMixin
 
 if TYPE_CHECKING:
-    from app.models.workspace import Workspace
+    from app.models.organization import Organization
 
 class Plan(Base, TimestampMixin):
     __tablename__ = "plans"
@@ -26,7 +26,7 @@ class Plan(Base, TimestampMixin):
     features: Mapped[dict | list | None] = mapped_column(JSONB, nullable=True)
     is_active: Mapped[bool] = mapped_column(default=True)
 
-    workspaces: Mapped[list["Workspace"]] = relationship("Workspace", back_populates="plan", lazy="selectin")
+    workspaces: Mapped[list["Organization"]] = relationship("Organization", back_populates="plan", lazy="selectin")
 
     __table_args__ = (
         CheckConstraint("monthly_price >= 0", name="ck_plans_monthly_price"),

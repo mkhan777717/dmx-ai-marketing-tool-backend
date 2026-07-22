@@ -2,7 +2,7 @@ import uuid
 from typing import Any, List
 from fastapi import APIRouter, Depends, BackgroundTasks, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.db.session import get_db_session as get_db
+from app.db.session import get_db
 from app.schemas.campaign_schedule import CampaignScheduleCreate, CampaignScheduleResponse, CampaignScheduleUpdate
 from app.services.campaign_scheduler import campaign_scheduler_service
 

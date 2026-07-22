@@ -9,7 +9,7 @@ from app.models.mixins import TenantMixin
 from app.constants.enums import NotificationType, NotificationPriority
 
 if TYPE_CHECKING:
-    from app.models.workspace import Workspace
+    from app.models.organization import Organization
     from app.models.user import User
 
 class Notification(Base, TenantMixin):
@@ -31,5 +31,5 @@ class Notification(Base, TenantMixin):
     from app.models.mixins import get_utc_now
     created_at: Mapped[datetime] = mapped_column(default=get_utc_now, nullable=False)
     
-    workspace: Mapped["Workspace"] = relationship("Workspace", lazy="selectin")
+    workspace: Mapped["Organization"] = relationship("Organization", lazy="selectin")
     user: Mapped["User"] = relationship("User", lazy="selectin")
