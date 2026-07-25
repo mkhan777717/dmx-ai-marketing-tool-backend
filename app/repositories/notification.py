@@ -6,6 +6,7 @@ from sqlalchemy import select, update
 from app.repositories.base import BaseRepository
 from app.models.notification import Notification
 from app.constants.enums import NotificationType
+from app.models.mixins import get_utc_now
 
 class NotificationRepository(BaseRepository[Notification]):
     async def get_unread_for_user(self, db: AsyncSession, user_id: uuid.UUID, limit: int = 50) -> Sequence[Notification]:
@@ -20,7 +21,7 @@ class NotificationRepository(BaseRepository[Notification]):
     async def mark_as_read(self, db: AsyncSession, notification_id: uuid.UUID) -> Notification | None:
         notification = await self.get_by_id(db, notification_id)
         if notification and not notification.read_at:
-            notification.read_at = datetime.now(timezone.utc)
+            notification.read_at = get_utc_now()
             db.add(notification)
             await db.flush()
             await db.refresh(notification)
@@ -30,7 +31,7 @@ class NotificationRepository(BaseRepository[Notification]):
         stmt = update(self.model).where(
             self.model.user_id == user_id,
             self.model.read_at.is_(None)
-        ).values(read_at=datetime.now(timezone.utc))
+        ).values(read_at=get_utc_now())
         
         result = await db.execute(stmt)
         await db.flush()

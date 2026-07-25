@@ -26,6 +26,10 @@ add_cors_middleware(app)
 #exception handlers
 register_exception_handlers(app)
 
+# Register health at root level (no prefix) for /health
+from app.api.v1.endpoints.health import router as health_router
+app.include_router(health_router)
+
 # Register API Routes
 app.include_router(
     api_router,

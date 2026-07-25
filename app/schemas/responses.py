@@ -9,6 +9,9 @@ class SuccessResponse(BaseModel, Generic[T]):
     data: T | dict = {}
     meta: dict[str, Any] = {}
 
+# Alias used by endpoints
+ApiResponse = SuccessResponse
+
 class ErrorResponse(BaseModel):
     success: bool = False
     message: str
