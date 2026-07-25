@@ -4,7 +4,7 @@ from sqlalchemy.orm import Mapped, mapped_column, declared_attr
 from sqlalchemy import ForeignKey
 
 def get_utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 class TimestampMixin:
     """Mixin for created_at and updated_at timestamps."""

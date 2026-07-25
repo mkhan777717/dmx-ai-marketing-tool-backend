@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.schemas.health import HealthResponse
+from app.config.settings import settings
 
 router = APIRouter()
 
@@ -11,11 +11,9 @@ async def root():
     }
 
 
-@router.get(
-    "/health",
-    response_model=HealthResponse,
-)
+@router.get("/health")
 async def health():
-    return HealthResponse(
-        status="healthy"
-    )
+    return {
+        "status": "ok",
+        "environment": settings.APP_ENV,
+    }

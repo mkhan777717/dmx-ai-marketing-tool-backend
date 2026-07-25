@@ -14,11 +14,16 @@ from app.repositories.audit_log import audit_log_repo
 
 @pytest.fixture
 async def setup_db_2f(async_db: AsyncSession):
-    user = User(email="test2f@test.com", supabase_user_id=uuid.uuid4())
+    user = User(email=f"test2f_{uuid.uuid4()}@test.com", supabase_user_id=uuid.uuid4())
     async_db.add(user)
     await async_db.commit()
     
-    ws = Workspace(name="Test 2F", slug="test-2f", owner_id=user.id, status=WorkspaceStatus.ACTIVE)
+    ws = Workspace(
+        name="Test 2F", 
+        slug=f"test-2f-{uuid.uuid4()}", 
+        owner_id=user.id, 
+        status=WorkspaceStatus.ACTIVE
+    )
     async_db.add(ws)
     await async_db.commit()
     return {"user": user, "ws": ws}

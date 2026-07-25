@@ -24,4 +24,4 @@ class CampaignSchedule(Base, TimestampMixin, TenantMixin, AuditMixin):
     retry_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     # Note: Relationship is defined using string reference to avoid import issues
-    campaign: Mapped["Campaign"] = relationship("Campaign", lazy="selectin", backref="schedule")
+    # campaign: Mapped["Campaign"] = relationship("Campaign", back_populates="schedules", lazy="selectin"), backref="schedule")

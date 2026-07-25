@@ -81,8 +81,8 @@ class BaseRepository(Generic[ModelType]):
             return False
         
         if soft and hasattr(obj, "deleted_at"):
-            from datetime import datetime, timezone
-            obj.deleted_at = datetime.now(timezone.utc)
+            from app.models.base import get_utc_now
+            obj.deleted_at = get_utc_now()
             db.add(obj)
             await db.flush()
         else:
