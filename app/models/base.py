@@ -3,8 +3,8 @@ from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy import MetaData
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 # Naming convention for indexes and constraints
 POSTGRES_INDEXES_NAMING_CONVENTION = {
@@ -17,17 +17,16 @@ POSTGRES_INDEXES_NAMING_CONVENTION = {
 
 metadata = MetaData(naming_convention=POSTGRES_INDEXES_NAMING_CONVENTION)
 
+
 def get_utc_now() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
+
 
 class Base(DeclarativeBase):
     metadata = metadata
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        primary_key=True,
-        default=uuid.uuid4,
-        index=True
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True
     )
 
     def to_dict(self) -> dict[str, Any]:

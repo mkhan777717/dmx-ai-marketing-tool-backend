@@ -1,15 +1,16 @@
 import logging
+
 from celery import Task
-import uuid
 
 logger = logging.getLogger(__name__)
 
+
 class BaseTask(Task):
     """
-    Base Celery Task that provides standardized logging, retry behaviors, 
+    Base Celery Task that provides standardized logging, retry behaviors,
     and robust error handling to keep tasks thin and trackable.
     """
-    
+
     # Standard settings for inherited tasks
     autoretry_for = (Exception,)
     retry_kwargs = {"max_retries": 3}

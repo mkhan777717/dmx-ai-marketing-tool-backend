@@ -1,6 +1,8 @@
 import uuid
 from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict
+
 
 class PermissionBase(BaseModel):
     name: str
@@ -9,12 +11,15 @@ class PermissionBase(BaseModel):
     description: str | None = None
     is_system: bool = True
 
+
 class PermissionCreate(PermissionBase):
     pass
+
 
 class PermissionUpdate(BaseModel):
     description: str | None = None
     # name, resource, action, and is_system are usually immutable after creation
+
 
 class PermissionResponse(PermissionBase):
     id: uuid.UUID

@@ -1,6 +1,8 @@
 import uuid
-from pydantic import BaseModel, ConfigDict
 from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict
+
 
 class UserPreferenceBase(BaseModel):
     theme: str = "system"
@@ -9,8 +11,10 @@ class UserPreferenceBase(BaseModel):
     notification_preferences: dict | list | None = None
     ai_preferences: dict | list | None = None
 
+
 class UserPreferenceCreate(UserPreferenceBase):
     user_id: uuid.UUID
+
 
 class UserPreferenceUpdate(BaseModel):
     theme: str | None = None
@@ -18,6 +22,7 @@ class UserPreferenceUpdate(BaseModel):
     date_format: str | None = None
     notification_preferences: dict | list | None = None
     ai_preferences: dict | list | None = None
+
 
 class UserPreferenceResponse(UserPreferenceBase):
     id: uuid.UUID

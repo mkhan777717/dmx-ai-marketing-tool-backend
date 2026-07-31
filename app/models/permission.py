@@ -1,8 +1,9 @@
-import uuid
+from sqlalchemy import Boolean, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, Boolean, UniqueConstraint
+
 from app.models.base import Base
 from app.models.mixins import TimestampMixin
+
 
 class Permission(Base, TimestampMixin):
     __tablename__ = "permissions"
@@ -13,7 +14,12 @@ class Permission(Base, TimestampMixin):
     description: Mapped[str | None] = mapped_column(String, nullable=True)
     is_system: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
-    role_permissions: Mapped[list["RolePermission"]] = relationship("RolePermission", back_populates="permission", cascade="all, delete-orphan", lazy="selectin")
+    role_permissions: Mapped[list["RolePermission"]] = relationship(
+        "RolePermission",
+        back_populates="permission",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
 
     __table_args__ = (
         UniqueConstraint("resource", "action", name="uq_permissions_resource_action"),

@@ -16,9 +16,7 @@ class Organization(BaseModel):
 
     __tablename__ = "organizations"
 
-    __table_args__ = (
-        UniqueConstraint("slug", name="uq_organizations_slug"),
-    )
+    __table_args__ = (UniqueConstraint("slug", name="uq_organizations_slug"),)
 
     name: Mapped[str] = mapped_column(
         String(255),

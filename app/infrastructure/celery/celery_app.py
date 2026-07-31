@@ -1,5 +1,6 @@
 from celery import Celery
-from kombu import Queue, Exchange
+from kombu import Exchange, Queue
+
 from app.config.settings import settings
 
 # Initialize the Celery application
@@ -17,16 +18,13 @@ celery_app.conf.update(
     result_serializer="json",
     timezone="UTC",
     enable_utc=True,
-
     # Optimization and Prefetching
     worker_prefetch_multiplier=1,
     task_acks_late=True,
-    
     # Message Routing
     task_default_queue="default",
     task_default_exchange="default",
     task_default_routing_key="default",
-    
     # Define custom queues
     task_queues=(
         Queue("default", Exchange("default"), routing_key="default"),
@@ -34,7 +32,6 @@ celery_app.conf.update(
         Queue("campaigns", Exchange("campaigns"), routing_key="campaigns"),
         Queue("notifications", Exchange("notifications"), routing_key="notifications"),
     ),
-    
     # Task routing maps
     task_routes={
         "app.infrastructure.celery.tasks.emails.*": {"queue": "emails"},
