@@ -73,7 +73,7 @@ def test_secret_service_encryption():
     encrypted = service.encrypt_token(original)
 
     assert encrypted != original
-    assert type(encrypted) is str
+    assert isinstance(encrypted, str)
 
     decrypted = service.decrypt_token(encrypted)
     assert decrypted == original
