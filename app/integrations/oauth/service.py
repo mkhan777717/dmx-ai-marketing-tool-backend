@@ -7,8 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.integrations.circuit_breaker.breaker import get_circuit_breaker
 from app.integrations.exceptions import IntegrationError
-from app.integrations.oauth.models import (ConnectionStatus,
-                                           IntegrationConnection)
+from app.integrations.oauth.models import ConnectionStatus, IntegrationConnection
 from app.integrations.oauth.repository import integration_connection_repo
 from app.integrations.registry import ConnectorFactory
 from app.integrations.retry.policy import retry_policy

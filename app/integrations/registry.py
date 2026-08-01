@@ -1,7 +1,13 @@
 from typing import Type
 
+from app.integrations.connectors.facebook import FacebookConnector
+from app.integrations.connectors.google import GoogleConnector
+from app.integrations.connectors.instagram import InstagramConnector
+from app.integrations.connectors.linkedin import LinkedInConnector
+
 # Import available connectors to ensure they can be registered
 from app.integrations.connectors.mock import MockConnector
+from app.integrations.connectors.slack import SlackConnector
 from app.integrations.interfaces import BaseConnector
 
 
@@ -38,3 +44,8 @@ class ConnectorFactory:
 
 # Auto-register known connectors
 ConnectorRegistry.register("mock", MockConnector)
+ConnectorRegistry.register("linkedin", LinkedInConnector)
+ConnectorRegistry.register("facebook", FacebookConnector)
+ConnectorRegistry.register("instagram", InstagramConnector)
+ConnectorRegistry.register("google", GoogleConnector)
+ConnectorRegistry.register("slack", SlackConnector)

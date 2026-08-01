@@ -46,8 +46,7 @@ class InAppProvider(BaseNotificationProvider):
                 }
                 # Handle cases where workspace_id is missing (system alerts) by fetching a workspace for the user
                 if not obj_in["workspace_id"]:
-                    from app.repositories.workspace_member import \
-                        workspace_member_repo
+                    from app.repositories.workspace_member import workspace_member_repo
 
                     memberships = await workspace_member_repo.get_by_user_id(
                         db, user_id

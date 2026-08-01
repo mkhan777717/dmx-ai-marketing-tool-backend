@@ -1,8 +1,10 @@
 from typing import Any
 
 from app.constants.enums import ApiProvider
-from app.schemas.campaign_content import (AIContentGenerateRequest,
-                                          AIContentGenerateResponse)
+from app.schemas.campaign_content import (
+    AIContentGenerateRequest,
+    AIContentGenerateResponse,
+)
 from app.services.ai.base import BaseAIProvider
 
 

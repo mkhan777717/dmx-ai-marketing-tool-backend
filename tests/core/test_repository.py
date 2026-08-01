@@ -2,8 +2,7 @@ import uuid
 
 import pytest
 from sqlalchemy import MetaData
-from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
-                                    create_async_engine)
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import Mapped, declarative_base, mapped_column
 
 from app.repositories.base import BaseRepository

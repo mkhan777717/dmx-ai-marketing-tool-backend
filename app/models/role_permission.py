@@ -1,8 +1,13 @@
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+if TYPE_CHECKING:
+    from app.models.role import Role
+    from app.models.permission import Permission
 
 from app.models.base import Base
 from app.models.mixins import get_utc_now

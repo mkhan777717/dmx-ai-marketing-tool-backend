@@ -22,9 +22,10 @@ def test_job_payload():
 
 @pytest.mark.asyncio
 async def test_worker_success(test_job_payload):
-    with patch("app.jobs.worker.JobExecutionService.mark_started") as mock_start, patch(
-        "app.jobs.worker.JobExecutionService.mark_completed"
-    ) as mock_complete:
+    with (
+        patch("app.jobs.worker.JobExecutionService.mark_started") as mock_start,
+        patch("app.jobs.worker.JobExecutionService.mark_completed") as mock_complete,
+    ):
 
         class MockJob:
             id = uuid.uuid4()
@@ -44,9 +45,10 @@ async def test_worker_success(test_job_payload):
 
 @pytest.mark.asyncio
 async def test_worker_failure(test_job_payload):
-    with patch("app.jobs.worker.JobExecutionService.mark_started") as mock_start, patch(
-        "app.jobs.worker.JobExecutionService.mark_failed"
-    ) as mock_fail:
+    with (
+        patch("app.jobs.worker.JobExecutionService.mark_started") as mock_start,
+        patch("app.jobs.worker.JobExecutionService.mark_failed") as mock_fail,
+    ):
 
         class MockJob:
             id = uuid.uuid4()
@@ -73,9 +75,10 @@ async def test_queue_service_enqueue():
     adapter = CeleryAdapter()
     service = QueueService(adapter)
 
-    with patch(
-        "app.jobs.queue.JobExecutionService.create_job"
-    ) as mock_create, patch.object(adapter, "enqueue") as mock_enqueue:
+    with (
+        patch("app.jobs.queue.JobExecutionService.create_job") as mock_create,
+        patch.object(adapter, "enqueue") as mock_enqueue,
+    ):
 
         class MockJob:
             id = uuid.uuid4()

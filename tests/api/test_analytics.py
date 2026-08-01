@@ -34,11 +34,15 @@ def override_auth_deps(mock_user_id, mock_workspace_id):
     app.dependency_overrides[get_current_user] = override_get_current_user
     app.dependency_overrides[get_current_workspace] = override_get_current_workspace
 
-    with patch(
-        "app.api.dependencies.auth.workspace_member_repo.get_member", return_value=None
-    ), patch(
-        "app.api.dependencies.auth.workspace_repo.get_by_id",
-        return_value=Workspace(id=mock_workspace_id, owner_id=mock_user_id),
+    with (
+        patch(
+            "app.api.dependencies.auth.workspace_member_repo.get_member",
+            return_value=None,
+        ),
+        patch(
+            "app.api.dependencies.auth.workspace_repo.get_by_id",
+            return_value=Workspace(id=mock_workspace_id, owner_id=mock_user_id),
+        ),
     ):
         yield
 

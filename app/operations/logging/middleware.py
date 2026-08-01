@@ -5,8 +5,12 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
-from app.operations.logging.context import (correlation_id_ctx, request_id_ctx,
-                                            reset_context_var, set_context_var)
+from app.operations.logging.context import (
+    correlation_id_ctx,
+    request_id_ctx,
+    reset_context_var,
+    set_context_var,
+)
 from app.operations.logging.logger import structured_logger
 
 

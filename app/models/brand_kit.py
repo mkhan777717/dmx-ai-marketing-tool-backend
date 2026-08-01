@@ -4,8 +4,7 @@ from sqlalchemy import String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
-from app.models.mixins import (AuditMixin, SoftDeleteMixin, TenantMixin,
-                               TimestampMixin)
+from app.models.mixins import AuditMixin, SoftDeleteMixin, TenantMixin, TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.workspace import Workspace

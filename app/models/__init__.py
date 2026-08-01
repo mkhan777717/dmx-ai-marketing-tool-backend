@@ -31,6 +31,7 @@ from app.operations.configuration.models import RuntimeConfiguration
 from app.operations.feature_flags.models import FeatureFlag, WorkspaceFeature
 
 __all__ = [
+    "IntegrationConnection",
     "Base",
     "Plan",
     "User",

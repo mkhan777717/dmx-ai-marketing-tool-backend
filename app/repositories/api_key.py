@@ -41,7 +41,7 @@ class ApiKeyRepository(BaseRepository[ApiKey]):
         self, db: AsyncSession, workspace_id: uuid.UUID
     ) -> Sequence[ApiKey]:
         stmt = select(self.model).where(
-            self.model.workspace_id == workspace_id, self.model.is_active == True
+            self.model.workspace_id == workspace_id, self.model.is_active
         )
         result = await db.execute(stmt)
         return result.scalars().all()

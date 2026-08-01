@@ -10,7 +10,7 @@ class ConfigurationService:
     @staticmethod
     async def get_config(db: AsyncSession, key: str) -> str | None:
         stmt = select(RuntimeConfiguration).where(
-            RuntimeConfiguration.key == key, RuntimeConfiguration.is_active == True
+            RuntimeConfiguration.key == key, RuntimeConfiguration.is_active
         )
         result = await db.execute(stmt)
         config = result.scalars().first()

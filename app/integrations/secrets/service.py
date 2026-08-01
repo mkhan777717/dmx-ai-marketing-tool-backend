@@ -4,7 +4,9 @@ import os
 from cryptography.fernet import Fernet
 
 from app.integrations.secrets.adapters.environment import (
-    EnvironmentSecretAdapter, SecretAdapter)
+    EnvironmentSecretAdapter,
+    SecretAdapter,
+)
 
 
 class SecretService:

@@ -1,5 +1,10 @@
+from typing import TYPE_CHECKING
+
 from sqlalchemy import Boolean, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+if TYPE_CHECKING:
+    from app.models.role_permission import RolePermission
 
 from app.models.base import Base
 from app.models.mixins import TimestampMixin

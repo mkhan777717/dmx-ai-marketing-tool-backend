@@ -6,8 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.constants.enums import NotificationType
 from app.models.notification import Notification
 from app.models.notification_preference import NotificationPreference
-from app.repositories.notification import (notification_preference_repo,
-                                           notification_repo)
+from app.repositories.notification import (
+    notification_preference_repo,
+    notification_repo,
+)
 from app.schemas.notification import NotificationPreferenceUpdate
 
 

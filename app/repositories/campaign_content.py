@@ -37,7 +37,7 @@ class CampaignContentRepository(BaseRepository[CampaignContent]):
                 self.model.campaign_id == campaign_id,
                 self.model.content_type == content_type,
                 self.model.language == language,
-                self.model.is_current == True,
+                self.model.is_current,
             )
             .order_by(desc(self.model.version))
             .limit(1)

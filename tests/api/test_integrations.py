@@ -2,10 +2,8 @@ import asyncio
 
 import pytest
 
-from app.integrations.circuit_breaker.breaker import (CircuitBreaker,
-                                                      CircuitState)
-from app.integrations.exceptions import (CircuitBreakerOpenError,
-                                         RateLimitExceededError)
+from app.integrations.circuit_breaker.breaker import CircuitBreaker, CircuitState
+from app.integrations.exceptions import CircuitBreakerOpenError, RateLimitExceededError
 from app.integrations.rate_limit.limiter import RateLimiter, rate_limit
 from app.integrations.secrets.adapters.environment import SecretAdapter
 from app.integrations.secrets.service import SecretService
@@ -60,8 +58,8 @@ async def test_rate_limiter():
     async def target():
         return True
 
-    assert await target() == True
-    assert await target() == True
+    assert await target()
+    assert await target()
 
     with pytest.raises(RateLimitExceededError):
         await target()

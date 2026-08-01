@@ -4,8 +4,7 @@ from typing import Sequence
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.constants.enums import (MemberStatus, NotificationPriority,
-                                 NotificationType)
+from app.constants.enums import MemberStatus, NotificationPriority, NotificationType
 from app.models.user import User
 from app.models.workspace import Workspace
 from app.models.workspace_member import WorkspaceMember

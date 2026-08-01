@@ -1,15 +1,13 @@
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import (Boolean, Column, ForeignKey, Index, Integer, String,
-                        Table, Text)
+from sqlalchemy import Boolean, Column, ForeignKey, Index, Integer, String, Table, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.constants.enums import ContentStatus, ContentType
 from app.models.base import Base
-from app.models.mixins import (AuditMixin, SoftDeleteMixin, TenantMixin,
-                               TimestampMixin)
+from app.models.mixins import AuditMixin, SoftDeleteMixin, TenantMixin, TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.asset import Asset

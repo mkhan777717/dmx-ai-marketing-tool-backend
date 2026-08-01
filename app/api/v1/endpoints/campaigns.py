@@ -4,12 +4,19 @@ from typing import Sequence
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies.auth import (get_current_user, get_current_workspace,
-                                       require_permission)
+from app.api.dependencies.auth import (
+    get_current_user,
+    get_current_workspace,
+    require_permission,
+)
 from app.db.session import get_db_session
 from app.models.user import User
-from app.schemas.campaign import (CampaignCreate, CampaignResponse,
-                                  CampaignStatusUpdate, CampaignUpdate)
+from app.schemas.campaign import (
+    CampaignCreate,
+    CampaignResponse,
+    CampaignStatusUpdate,
+    CampaignUpdate,
+)
 from app.services.campaign import CampaignService
 
 router = APIRouter()

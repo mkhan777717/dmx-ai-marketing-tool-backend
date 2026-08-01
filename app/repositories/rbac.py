@@ -18,11 +18,7 @@ class PermissionRepository(BaseRepository[Permission]):
 
 class RoleRepository(BaseRepository[Role]):
     async def get_system_roles(self, db: AsyncSession) -> Sequence[Role]:
-        stmt = (
-            select(self.model)
-            .where(self.model.is_system == True)
-            .order_by(self.model.name)
-        )
+        stmt = select(self.model).where(self.model.is_system).order_by(self.model.name)
         result = await db.execute(stmt)
         return result.scalars().all()
 
@@ -31,9 +27,7 @@ class RoleRepository(BaseRepository[Role]):
     ) -> Sequence[Role]:
         stmt = (
             select(self.model)
-            .where(
-                self.model.workspace_id == workspace_id, self.model.is_system == False
-            )
+            .where(self.model.workspace_id == workspace_id, not self.model.is_system)
             .order_by(self.model.name)
         )
         result = await db.execute(stmt)
@@ -50,7 +44,7 @@ class RoleRepository(BaseRepository[Role]):
         stmt = (
             select(self.model)
             .options(selectinload(self.model.role_permissions))
-            .where(self.model.id == system_role_id, self.model.is_system == True)
+            .where(self.model.id == system_role_id, self.model.is_system)
         )
         result = await db.execute(stmt)
         system_role = result.scalar_one_or_none()

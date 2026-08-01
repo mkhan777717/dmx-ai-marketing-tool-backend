@@ -5,8 +5,7 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.constants.enums import (InviteStatus, MemberStatus, RoleType,
-                                 WorkspaceStatus)
+from app.constants.enums import InviteStatus, MemberStatus, RoleType, WorkspaceStatus
 from app.models.mixins import get_utc_now
 from app.models.role import Role
 from app.models.user import User

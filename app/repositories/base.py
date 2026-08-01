@@ -31,7 +31,7 @@ class BaseRepository(Generic[ModelType]):
         filters: dict[str, Any] = None,
         sort_by: str = "created_at",
         sort_desc: bool = True,
-        include_deleted: bool = False
+        include_deleted: bool = False,
     ) -> Sequence[ModelType]:
         stmt = select(self.model)
 

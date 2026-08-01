@@ -82,7 +82,7 @@ async def seed_rbac():
         print("Creating System Roles...")
         roles = {}
         for role_name, role_data in ROLES_SETUP.items():
-            stmt = select(Role).where(Role.name == role_name, Role.is_system == True)
+            stmt = select(Role).where(Role.name == role_name, Role.is_system.is_(True))
             result = await db.execute(stmt)
             role = result.scalar_one_or_none()
 

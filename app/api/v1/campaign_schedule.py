@@ -5,15 +5,18 @@ from fastapi import APIRouter, BackgroundTasks, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_current_workspace
+
 # For dependency injection, assuming similar setup to other routers
 # I will simulate the dependency for get_current_user and get_current_workspace
 # to fetch user_id and workspace_id. Since the platform provides these, I will import them from where they typically are.
 # In case of missing imports in this branch, I'll use placeholders if needed, but standard is:
 from app.db.models.user import User
 from app.db.session import get_db_session as get_db
-from app.schemas.campaign_schedule import (CampaignScheduleCreate,
-                                           CampaignScheduleResponse,
-                                           CampaignScheduleUpdate)
+from app.schemas.campaign_schedule import (
+    CampaignScheduleCreate,
+    CampaignScheduleResponse,
+    CampaignScheduleUpdate,
+)
 from app.services.campaign_scheduler import campaign_scheduler_service
 
 router = APIRouter(prefix="/campaigns/{campaign_id}", tags=["campaign-scheduling"])

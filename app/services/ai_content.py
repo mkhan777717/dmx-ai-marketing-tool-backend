@@ -8,9 +8,11 @@ from app.constants.enums import ContentStatus
 from app.models.campaign_content import CampaignContent
 from app.repositories.campaign import campaign_repo
 from app.repositories.campaign_content import campaign_content_repo
-from app.schemas.campaign_content import (AIContentGenerateRequest,
-                                          AIContentGenerateResponse,
-                                          CampaignContentCreate)
+from app.schemas.campaign_content import (
+    AIContentGenerateRequest,
+    AIContentGenerateResponse,
+    CampaignContentCreate,
+)
 from app.services.ai.factory import AIProviderFactory
 
 

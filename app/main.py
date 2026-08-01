@@ -6,8 +6,14 @@ from app.exceptions.handlers import register_exception_handlers
 from app.middleware.cors import add_cors_middleware
 from app.middleware.logging import log_requests
 from app.middleware.timing import add_process_time_header
+from app.operations.admin.router import router as admin_router
+from app.operations.announcements.router import router as announcements_router
+from app.operations.audit.router import router as audit_router
+from app.operations.configuration.router import router as config_router
+from app.operations.feature_flags.router import router as feature_flags_router
 from app.operations.logging.middleware import CorrelationIdMiddleware
 from app.operations.maintenance.middleware import MaintenanceModeMiddleware
+from app.operations.monitoring.health import router as ops_health_router
 
 logger.info("Starting AI Marketing Suite Backend")
 
@@ -36,8 +42,6 @@ add_cors_middleware(app)
 register_exception_handlers(app)
 
 # Register Operations Health router
-from app.operations.monitoring.health import router as ops_health_router
-
 app.include_router(ops_health_router)
 
 # Register API Routes
@@ -45,13 +49,6 @@ app.include_router(
     api_router,
     prefix="/api/v1",
 )
-
-from app.operations.admin.router import router as admin_router
-from app.operations.announcements.router import router as announcements_router
-# Register Operations Routes
-from app.operations.audit.router import router as audit_router
-from app.operations.configuration.router import router as config_router
-from app.operations.feature_flags.router import router as feature_flags_router
 
 app.include_router(audit_router)
 app.include_router(admin_router)

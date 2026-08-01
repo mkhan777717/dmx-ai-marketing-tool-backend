@@ -9,8 +9,7 @@ from app.constants.enums import CampaignStatus
 from app.models.brand_kit import BrandKit
 from app.models.campaign import Campaign
 from app.repositories.campaign import campaign_repo
-from app.schemas.campaign import (CampaignCreate, CampaignStatusUpdate,
-                                  CampaignUpdate)
+from app.schemas.campaign import CampaignCreate, CampaignStatusUpdate, CampaignUpdate
 
 
 class CampaignService:

@@ -3,8 +3,7 @@ import re
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.constants.enums import (MemberStatus, NotificationPriority,
-                                 NotificationType)
+from app.constants.enums import MemberStatus, NotificationPriority, NotificationType
 from app.models.base import get_utc_now
 from app.models.user import User
 from app.models.workspace import Workspace
@@ -13,9 +12,11 @@ from app.repositories.notification import notification_repo
 from app.repositories.rbac import role_repo
 from app.repositories.workspace import workspace_repo
 from app.repositories.workspace_member import workspace_member_repo
-from app.schemas.workspace import (WorkspaceCreateInternal,
-                                   WorkspaceTransferOwnershipRequest,
-                                   WorkspaceUpdate)
+from app.schemas.workspace import (
+    WorkspaceCreateInternal,
+    WorkspaceTransferOwnershipRequest,
+    WorkspaceUpdate,
+)
 
 
 class WorkspaceService:

@@ -16,13 +16,13 @@ class AnnouncementService:
         stmt = (
             select(SystemAnnouncement)
             .where(
-                SystemAnnouncement.is_active == True,
+                SystemAnnouncement.is_active,
                 or_(
-                    SystemAnnouncement.starts_at == None,
+                    SystemAnnouncement.starts_at is None,
                     SystemAnnouncement.starts_at <= now,
                 ),
                 or_(
-                    SystemAnnouncement.expires_at == None,
+                    SystemAnnouncement.expires_at is None,
                     SystemAnnouncement.expires_at >= now,
                 ),
             )

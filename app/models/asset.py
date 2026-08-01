@@ -7,8 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.constants.enums import AssetStatus, AssetType
 from app.models.base import Base
-from app.models.mixins import (AuditMixin, SoftDeleteMixin, TenantMixin,
-                               TimestampMixin)
+from app.models.mixins import AuditMixin, SoftDeleteMixin, TenantMixin, TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.user import User

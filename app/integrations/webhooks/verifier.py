@@ -11,7 +11,7 @@ class WebhookVerifier:
         provider = provider.lower()
         if provider == "slack":
             # Slack verification logic here
-            signature = request.headers.get("X-Slack-Signature")
+            request.headers.get("X-Slack-Signature")
             # ...
             return True
 

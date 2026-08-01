@@ -1,8 +1,10 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from app.schemas.campaign_content import (AIContentGenerateRequest,
-                                          AIContentGenerateResponse)
+from app.schemas.campaign_content import (
+    AIContentGenerateRequest,
+    AIContentGenerateResponse,
+)
 
 
 class BaseAIProvider(ABC):

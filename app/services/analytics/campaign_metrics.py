@@ -1,7 +1,7 @@
 import uuid
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants.enums import CampaignStatus
@@ -14,7 +14,7 @@ class CampaignMetricsService:
         """Calculate aggregated campaign metrics for a workspace."""
         # This is a simplified aggregation query.
         # In a real app, this would query CampaignAnalytics table alongside Campaign status.
-        stmt = select(
+        select(
             func.count(Campaign.id).label("total_campaigns"),
             func.sum(
                 case((Campaign.status == CampaignStatus.ACTIVE, 1), else_=0)

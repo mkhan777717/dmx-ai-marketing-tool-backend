@@ -8,9 +8,12 @@ from app.api.dependencies.auth import get_current_workspace, require_permission
 from app.constants.enums import SnapshotType
 from app.db.session import get_db_session
 from app.repositories.analytics import ai_usage_repo, campaign_analytics_repo
-from app.schemas.analytics import (AIUsageResponse, AnalyticsSnapshotResponse,
-                                   CampaignAnalyticsResponse,
-                                   DashboardOverviewResponse)
+from app.schemas.analytics import (
+    AIUsageResponse,
+    AnalyticsSnapshotResponse,
+    CampaignAnalyticsResponse,
+    DashboardOverviewResponse,
+)
 from app.services.analytics.core import AnalyticsService
 from app.services.analytics.dashboard import DashboardService
 

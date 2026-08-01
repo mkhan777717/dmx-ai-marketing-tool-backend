@@ -6,8 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies.auth import get_current_workspace, require_permission
 from app.db.session import get_db_session
-from app.schemas.social_account import (SocialAccountConnectRequest,
-                                        SocialAccountResponse)
+from app.schemas.social_account import (
+    SocialAccountConnectRequest,
+    SocialAccountResponse,
+)
 from app.services.social_account import SocialAccountService
 
 router = APIRouter()

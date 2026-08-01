@@ -76,9 +76,7 @@ async def oauth_callback(
     provider = state_data["provider"]
 
     # We exchange the code inside connect_provider using the connector
-    connection = await integration_service.connect_provider(
-        db, workspace_id, provider, code
-    )
+    await integration_service.connect_provider(db, workspace_id, provider, code)
     await db.commit()
 
     return ApiResponse(success=True, message=f"Successfully connected to {provider}")

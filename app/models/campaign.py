@@ -2,14 +2,12 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import (Column, DateTime, ForeignKey, Index, Numeric, String,
-                        Table, Text)
+from sqlalchemy import Column, DateTime, ForeignKey, Index, Numeric, String, Table, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.constants.enums import CampaignStatus
 from app.models.base import Base
-from app.models.mixins import (AuditMixin, SoftDeleteMixin, TenantMixin,
-                               TimestampMixin)
+from app.models.mixins import AuditMixin, SoftDeleteMixin, TenantMixin, TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.asset import Asset

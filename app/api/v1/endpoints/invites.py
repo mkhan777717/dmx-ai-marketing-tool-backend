@@ -4,14 +4,16 @@ from typing import Any
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies.auth import (get_current_user, get_current_workspace,
-                                       require_permission)
+from app.api.dependencies.auth import (
+    get_current_user,
+    get_current_workspace,
+    require_permission,
+)
 from app.db.session import get_db_session
 from app.models.user import User
 from app.models.workspace import Workspace
 from app.schemas.responses import ApiResponse
-from app.schemas.workspace_invite import (WorkspaceInviteRequest,
-                                          WorkspaceInviteResponse)
+from app.schemas.workspace_invite import WorkspaceInviteRequest, WorkspaceInviteResponse
 from app.services.workspace_invitation import workspace_invitation_service
 
 router = APIRouter()
