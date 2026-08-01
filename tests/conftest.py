@@ -27,8 +27,11 @@ async def async_db():
         async_url, pool_pre_ping=True, connect_args={"statement_cache_size": 0}
     )
     async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-    async with async_session() as session:
-        yield session
+    try:
+        async with async_session() as session:
+            yield session
+    finally:
+        await engine.dispose()
 
 
 @pytest.fixture(autouse=True)
