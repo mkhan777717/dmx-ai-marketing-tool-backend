@@ -38,7 +38,7 @@ async def test_workspace_creation_and_relationships(async_db: AsyncSession):
     # Test slug uniqueness
     ws2 = Workspace(
         name="Another Workspace",
-        slug="test-workspace",  # duplicate
+        slug=ws.slug,  # duplicate
         owner_id=owner.id,
     )
     async_db.add(ws2)

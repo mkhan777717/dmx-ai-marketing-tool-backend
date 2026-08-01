@@ -56,6 +56,14 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Create .env file
+        run: |
+          echo "ENVIRONMENT=${{ env.ENVIRONMENT }}" >> .env
+          echo "DATABASE_URL=${{ env.DATABASE_URL }}" >> .env
+          echo "SECRET_KEY=${{ env.SECRET_KEY }}" >> .env
+          echo "ALGORITHM=${{ env.ALGORITHM }}" >> .env
+          echo "ACCESS_TOKEN_EXPIRE_MINUTES=${{ env.ACCESS_TOKEN_EXPIRE_MINUTES }}" >> .env
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -78,6 +86,10 @@ jobs:
       - name: Run Alembic migrations
         run: |
           alembic upgrade head
+
+      - name: Seed Database
+        run: |
+          python scripts/seed_rbac.py || exit 1
 
       - name: Verify database tables
         run: |

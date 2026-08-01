@@ -29,7 +29,7 @@ async def test_user_creation_and_soft_delete(async_db: AsyncSession):
 
     # Test unique email constraint
     user_id = user.id
-    user2 = User(email="test@example.com", supabase_user_id=uuid.uuid4())  # duplicate
+    user2 = User(email=user.email, supabase_user_id=uuid.uuid4())  # duplicate
     async_db.add(user2)
     with pytest.raises(IntegrityError):
         await async_db.commit()
