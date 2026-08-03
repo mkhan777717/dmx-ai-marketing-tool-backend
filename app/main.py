@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
 from app.api.v1.api import api_router
+from app.api.v1.endpoints.health import router as health_router
 from app.core.logger import logger
 from app.exceptions.handlers import register_exception_handlers
 from app.middleware.cors import add_cors_middleware
@@ -14,8 +15,6 @@ from app.operations.feature_flags.router import router as feature_flags_router
 from app.operations.logging.middleware import CorrelationIdMiddleware
 from app.operations.maintenance.middleware import MaintenanceModeMiddleware
 from app.operations.monitoring.health import router as ops_health_router
-from app.api.v1.endpoints.health import router as health_router
-
 
 logger.info("Starting AI Marketing Suite Backend")
 

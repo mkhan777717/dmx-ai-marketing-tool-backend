@@ -1,6 +1,6 @@
 from datetime import datetime
-from uuid import UUID
 from typing import TYPE_CHECKING
+from uuid import UUID
 
 from sqlalchemy import (
     DateTime,
@@ -15,9 +15,9 @@ from sqlalchemy.orm import (
     relationship,
 )
 
+from app.constants.enums import MembershipStatus, UserRole
 from app.models.base import Base
 from app.models.mixins import TimestampMixin
-from app.constants.enums import MembershipStatus, UserRole
 
 if TYPE_CHECKING:
     from .organization import Organization
