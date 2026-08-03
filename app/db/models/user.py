@@ -6,9 +6,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import BaseModel
 
-
 if TYPE_CHECKING:
     from .membership import Membership
+
 
 class User(BaseModel):
     """
@@ -18,9 +18,7 @@ class User(BaseModel):
 
     __tablename__ = "users"
 
-    __table_args__ = (
-        UniqueConstraint("email", name="uq_users_email"),
-    )
+    __table_args__ = (UniqueConstraint("email", name="uq_users_email"),)
 
     supabase_user_id: Mapped[str] = mapped_column(
         String(255),
@@ -62,7 +60,7 @@ class User(BaseModel):
         nullable=True,
     )
     memberships: Mapped[list["Membership"]] = relationship(
-    "Membership",
-    back_populates="user",
-    cascade="all, delete-orphan",
-)
+        "Membership",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )

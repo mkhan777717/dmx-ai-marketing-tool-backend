@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+
 from app.config.settings import settings
 
 router = APIRouter()
@@ -6,9 +7,7 @@ router = APIRouter()
 
 @router.get("/")
 async def root():
-    return {
-        "message": "AI Marketing Suite Backend is running"
-    }
+    return {"message": "AI Marketing Suite Backend is running"}
 
 
 @router.get("/health")

@@ -1,7 +1,10 @@
 import uuid
 from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict
+
 from app.constants.enums import MemberStatus
+
 
 class WorkspaceMemberBase(BaseModel):
     workspace_id: uuid.UUID
@@ -9,15 +12,19 @@ class WorkspaceMemberBase(BaseModel):
     role_id: uuid.UUID
     status: MemberStatus = MemberStatus.PENDING
 
+
 class WorkspaceMemberCreate(WorkspaceMemberBase):
     invited_by: uuid.UUID | None = None
+
 
 class WorkspaceMemberUpdate(BaseModel):
     role_id: uuid.UUID | None = None
     status: MemberStatus | None = None
 
+
 class WorkspaceMemberUpdateRequest(BaseModel):
     role_id: uuid.UUID
+
 
 class WorkspaceMemberResponse(WorkspaceMemberBase):
     id: uuid.UUID

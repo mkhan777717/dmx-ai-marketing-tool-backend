@@ -1,6 +1,6 @@
-from typing import Any
+from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import PostgresDsn, computed_field
+
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "AI Marketing Platform"
@@ -33,5 +33,6 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
 
 settings = Settings()

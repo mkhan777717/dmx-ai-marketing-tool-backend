@@ -1,6 +1,8 @@
 import uuid
-from pydantic import BaseModel, EmailStr, ConfigDict
 from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, EmailStr
+
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -17,8 +19,10 @@ class UserBase(BaseModel):
     is_verified: bool = False
     default_workspace_id: uuid.UUID | None = None
 
+
 class UserCreate(UserBase):
     pass
+
 
 class UserUpdate(BaseModel):
     email: EmailStr | None = None
@@ -33,6 +37,7 @@ class UserUpdate(BaseModel):
     is_active: bool | None = None
     is_verified: bool | None = None
     default_workspace_id: uuid.UUID | None = None
+
 
 class UserResponse(UserBase):
     id: uuid.UUID

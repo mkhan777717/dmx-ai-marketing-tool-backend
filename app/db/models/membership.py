@@ -1,19 +1,18 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
+from uuid import UUID
 
-from sqlalchemy import DateTime, Enum, ForeignKey, UniqueConstraint
+from sqlalchemy import DateTime, Enum, ForeignKey, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import BaseModel
 from app.db.enums import MembershipStatus, UserRole
-from uuid import UUID
-from sqlalchemy import func
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .organization import Organization
     from .user import User
-    
+
+
 class Membership(BaseModel):
     """
     Represents a user's membership in an organization.
@@ -69,4 +68,3 @@ class Membership(BaseModel):
         "Organization",
         back_populates="memberships",
     )
-   

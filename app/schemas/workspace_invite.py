@@ -1,7 +1,10 @@
 import uuid
 from datetime import datetime
-from pydantic import BaseModel, EmailStr, ConfigDict
+
+from pydantic import BaseModel, ConfigDict, EmailStr
+
 from app.constants.enums import InviteStatus
+
 
 class WorkspaceInviteBase(BaseModel):
     workspace_id: uuid.UUID
@@ -9,16 +12,20 @@ class WorkspaceInviteBase(BaseModel):
     role_id: uuid.UUID
     status: InviteStatus = InviteStatus.PENDING
 
+
 class WorkspaceInviteCreate(WorkspaceInviteBase):
     inviter_id: uuid.UUID | None = None
+
 
 class WorkspaceInviteRequest(BaseModel):
     email: EmailStr
     role_id: uuid.UUID
 
+
 class WorkspaceInviteUpdate(BaseModel):
     status: InviteStatus | None = None
     role_id: uuid.UUID | None = None
+
 
 class WorkspaceInviteResponse(WorkspaceInviteBase):
     id: uuid.UUID
