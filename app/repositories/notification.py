@@ -66,9 +66,7 @@ class NotificationRepository(BaseRepository[Notification]):
         return result.rowcount or 0
 
 
-class NotificationPreferenceRepository(
-    BaseRepository[NotificationPreference]
-):
+class NotificationPreferenceRepository(BaseRepository[NotificationPreference]):
     async def get_by_user_and_type(
         self,
         db: AsyncSession,
@@ -90,15 +88,11 @@ class NotificationPreferenceRepository(
         db: AsyncSession,
         user_id: uuid.UUID,
     ) -> Sequence[NotificationPreference]:
-        stmt = select(self.model).where(
-            self.model.user_id == user_id
-        )
+        stmt = select(self.model).where(self.model.user_id == user_id)
 
         result = await db.execute(stmt)
         return result.scalars().all()
 
 
 notification_repo = NotificationRepository(Notification)
-notification_preference_repo = NotificationPreferenceRepository(
-    NotificationPreference
-)
+notification_preference_repo = NotificationPreferenceRepository(NotificationPreference)

@@ -15,9 +15,7 @@ if TYPE_CHECKING:
 class User(Base, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "users"
 
-    __table_args__ = (
-        UniqueConstraint("email", name="uq_users_email"),
-    )
+    __table_args__ = (UniqueConstraint("email", name="uq_users_email"),)
 
     email: Mapped[str] = mapped_column(
         String,

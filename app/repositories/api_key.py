@@ -28,9 +28,7 @@ class ApiKeyRepository(BaseRepository[ApiKey]):
         return self.fernet.encrypt(secret.encode("utf-8")).decode("utf-8")
 
     def decrypt_secret(self, encrypted_secret: str) -> str:
-        return self.fernet.decrypt(
-            encrypted_secret.encode("utf-8")
-        ).decode("utf-8")
+        return self.fernet.decrypt(encrypted_secret.encode("utf-8")).decode("utf-8")
 
     async def create_api_key(
         self,
@@ -53,12 +51,9 @@ class ApiKeyRepository(BaseRepository[ApiKey]):
         db: AsyncSession,
         workspace_id: uuid.UUID,
     ) -> Sequence[ApiKey]:
-        stmt = (
-            select(self.model)
-            .where(
-                self.model.workspace_id == workspace_id,
-                self.model.is_active.is_(True),
-            )
+        stmt = select(self.model).where(
+            self.model.workspace_id == workspace_id,
+            self.model.is_active.is_(True),
         )
 
         result = await db.execute(stmt)

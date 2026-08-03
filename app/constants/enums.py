@@ -112,6 +112,7 @@ class PermissionAction(str, Enum):
     MANAGE = "MANAGE"
     PUBLISH = "PUBLISH"
 
+
 class MembershipStatus(str, Enum):
     PENDING = "PENDING"
     ACTIVE = "ACTIVE"

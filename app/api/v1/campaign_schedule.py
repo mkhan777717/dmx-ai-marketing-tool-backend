@@ -54,9 +54,7 @@ async def update_campaign_schedule(
     workspace_id: uuid.UUID = Depends(get_current_workspace),
 ) -> Any:
     """Update a campaign schedule."""
-    create_data = CampaignScheduleCreate(
-        **schedule_data.model_dump(exclude_unset=True)
-    )
+    create_data = CampaignScheduleCreate(**schedule_data.model_dump(exclude_unset=True))
 
     return await campaign_scheduler_service.schedule_campaign(
         db,

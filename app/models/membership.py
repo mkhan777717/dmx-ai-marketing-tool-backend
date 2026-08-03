@@ -22,7 +22,8 @@ from app.constants.enums import MembershipStatus, UserRole
 if TYPE_CHECKING:
     from .organization import Organization
     from .user import User
-    
+
+
 class Membership(Base, TimestampMixin):
     """
     Represents a user's membership in an organization.
@@ -78,4 +79,3 @@ class Membership(Base, TimestampMixin):
         "Organization",
         back_populates="memberships",
     )
-   

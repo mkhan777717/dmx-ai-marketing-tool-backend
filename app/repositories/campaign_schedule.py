@@ -17,14 +17,10 @@ class CampaignScheduleRepository(BaseRepository[CampaignSchedule]):
         campaign_id: uuid.UUID,
         workspace_id: uuid.UUID | None = None,
     ) -> CampaignSchedule | None:
-        stmt = select(self.model).where(
-            self.model.campaign_id == campaign_id
-        )
+        stmt = select(self.model).where(self.model.campaign_id == campaign_id)
 
         if workspace_id is not None:
-            stmt = stmt.where(
-                self.model.workspace_id == workspace_id
-            )
+            stmt = stmt.where(self.model.workspace_id == workspace_id)
 
         result = await db.execute(stmt)
         return result.scalar_one_or_none()
