@@ -1,10 +1,12 @@
 from enum import Enum
 
+
 class WorkspaceStatus(str, Enum):
     ACTIVE = "ACTIVE"
     SUSPENDED = "SUSPENDED"
     ARCHIVED = "ARCHIVED"
     TRIAL = "TRIAL"
+
 
 class MemberStatus(str, Enum):
     PENDING = "PENDING"
@@ -12,11 +14,13 @@ class MemberStatus(str, Enum):
     SUSPENDED = "SUSPENDED"
     REMOVED = "REMOVED"
 
+
 class InviteStatus(str, Enum):
     PENDING = "PENDING"
     ACCEPTED = "ACCEPTED"
     REVOKED = "REVOKED"
     EXPIRED = "EXPIRED"
+
 
 class NotificationType(str, Enum):
     SYSTEM = "SYSTEM"
@@ -24,11 +28,13 @@ class NotificationType(str, Enum):
     MESSAGE = "MESSAGE"
     BILLING = "BILLING"
 
+
 class NotificationPriority(str, Enum):
     LOW = "LOW"
     NORMAL = "NORMAL"
     HIGH = "HIGH"
     URGENT = "URGENT"
+
 
 class AssetType(str, Enum):
     IMAGE = "IMAGE"
@@ -39,11 +45,13 @@ class AssetType(str, Enum):
     ICON = "ICON"
     OTHER = "OTHER"
 
+
 class AssetStatus(str, Enum):
     UPLOADING = "UPLOADING"
     READY = "READY"
     FAILED = "FAILED"
     ARCHIVED = "ARCHIVED"
+
 
 class CampaignStatus(str, Enum):
     DRAFT = "DRAFT"
@@ -52,12 +60,14 @@ class CampaignStatus(str, Enum):
     COMPLETED = "COMPLETED"
     ARCHIVED = "ARCHIVED"
 
+
 class ScheduleStatus(str, Enum):
     SCHEDULED = "SCHEDULED"
     PUBLISHED = "PUBLISHED"
     FAILED = "FAILED"
     PAUSED = "PAUSED"
     CANCELLED = "CANCELLED"
+
 
 class ContentType(str, Enum):
     SOCIAL_POST = "SOCIAL_POST"
@@ -68,12 +78,14 @@ class ContentType(str, Enum):
     SMS = "SMS"
     OTHER = "OTHER"
 
+
 class ContentStatus(str, Enum):
     DRAFT = "DRAFT"
     IN_REVIEW = "IN_REVIEW"
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
     READY = "READY"
+
 
 class ApiProvider(str, Enum):
     OPENAI = "OPENAI"
@@ -83,10 +95,14 @@ class ApiProvider(str, Enum):
     LINKEDIN = "LINKEDIN"
     GOOGLE = "GOOGLE"
     STRIPE = "STRIPE"
+    MOCK = "MOCK"
+    INSTAGRAM = "INSTAGRAM"
+
 
 class RoleType(str, Enum):
     SYSTEM = "SYSTEM"
     CUSTOM = "CUSTOM"
+
 
 class PermissionAction(str, Enum):
     CREATE = "CREATE"
@@ -107,3 +123,33 @@ class UserRole(str, Enum):
     OWNER = "OWNER"
     ADMIN = "ADMIN"
     MEMBER = "MEMBER"
+
+
+class PublishStatus(str, Enum):
+    PENDING = "PENDING"
+    PUBLISHED = "PUBLISHED"
+    FAILED = "FAILED"
+
+
+class SnapshotType(str, Enum):
+    DAILY = "DAILY"
+    WEEKLY = "WEEKLY"
+    MONTHLY = "MONTHLY"
+    YEARLY = "YEARLY"
+
+
+class JobStatus(str, Enum):
+    PENDING = "PENDING"
+    QUEUED = "QUEUED"
+    RUNNING = "RUNNING"
+    RETRYING = "RETRYING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+    CANCELLED = "CANCELLED"
+
+
+class JobPriority(str, Enum):
+    LOW = "LOW"
+    DEFAULT = "DEFAULT"
+    HIGH = "HIGH"
+    CRITICAL = "CRITICAL"

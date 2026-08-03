@@ -1,17 +1,19 @@
 import uuid
-import base64
+from typing import Any, Sequence
+
 from cryptography.fernet import Fernet
-from typing import Sequence
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from app.repositories.base import BaseRepository
-from app.models.api_key import ApiKey
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.config.settings import settings
+from app.models.api_key import ApiKey
+from app.repositories.base import BaseRepository
+
 
 class ApiKeyRepository(BaseRepository[ApiKey]):
     def __init__(self, model: type[ApiKey]):
         super().__init__(model)
-        # We need a 32 url-safe base64-encoded byte string for Fernet
+
         key = settings.ENCRYPTION_KEY
 
         if not key:
@@ -23,12 +25,12 @@ class ApiKeyRepository(BaseRepository[ApiKey]):
             raise ValueError("Invalid ENCRYPTION_KEY.") from exc
 
     def encrypt_secret(self, secret: str) -> str:
-        return self.fernet.encrypt(secret.encode('utf-8')).decode('utf-8')
+        return self.fernet.encrypt(secret.encode("utf-8")).decode("utf-8")
 
     def decrypt_secret(self, encrypted_secret: str) -> str:
-        return self.fernet.decrypt(encrypted_secret.encode('utf-8')).decode('utf-8')
-
-    from typing import Any
+        return self.fernet.decrypt(
+            encrypted_secret.encode("utf-8")
+        ).decode("utf-8")
 
     async def create_api_key(
         self,
@@ -37,27 +39,30 @@ class ApiKeyRepository(BaseRepository[ApiKey]):
     ) -> ApiKey:
         secret = obj_in.pop("secret")
         obj_in["encrypted_secret"] = self.encrypt_secret(secret)
-        
+
         api_key = self.model(**obj_in)
+
         db.add(api_key)
         await db.flush()
         await db.refresh(api_key)
+
         return api_key
 
-    async def get_active_by_organization(
-    self,
-    db: AsyncSession,
-    organization_id: uuid.UUID, 
+    async def get_active_by_workspace(
+        self,
+        db: AsyncSession,
+        workspace_id: uuid.UUID,
     ) -> Sequence[ApiKey]:
         stmt = (
             select(self.model)
             .where(
-            self.model.organization_id == organization_id,
-            self.model.is_active.is_(True),
+                self.model.workspace_id == workspace_id,
+                self.model.is_active.is_(True),
+            )
         )
-    )
 
         result = await db.execute(stmt)
         return result.scalars().all()
+
 
 api_key_repo = ApiKeyRepository(ApiKey)

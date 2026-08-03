@@ -1,7 +1,9 @@
 import uuid
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict
 from typing import Any
+
+from pydantic import BaseModel, ConfigDict
+
 
 class AuditLogBase(BaseModel):
     workspace_id: uuid.UUID
@@ -15,8 +17,10 @@ class AuditLogBase(BaseModel):
     request_id: str | None = None
     ip_address: str | None = None
 
+
 class AuditLogCreate(AuditLogBase):
     pass
+
 
 class AuditLogResponse(AuditLogBase):
     id: uuid.UUID

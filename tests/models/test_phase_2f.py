@@ -1,53 +1,50 @@
-import pytest
 import uuid
 
+import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.user import User
-from app.models.organization import Organization
-from app.models.api_key import ApiKey
-from app.models.audit_log import AuditLog
+from app.constants.enums import ApiProvider, WorkspaceStatus
 from app.models.notification import Notification
-
-from app.constants.enums import ApiProvider
-
+from app.models.user import User
+from app.models.workspace import Workspace
+from app.operations.audit.models import AuditLog
+from app.operations.audit.repository import audit_log_repo
 from app.repositories.api_key import api_key_repo
-from app.repositories.audit_log import audit_log_repo
 from app.repositories.notification import notification_repo
 
 
 @pytest.fixture
 async def setup_db_2f(async_db: AsyncSession):
     user = User(
-        email="test2f@test.com",
+        email=f"test2f_{uuid.uuid4()}@test.com",
         supabase_user_id=uuid.uuid4(),
     )
-
     async_db.add(user)
     await async_db.commit()
     await async_db.refresh(user)
 
-    organization = Organization(
-        name="Test Organization",
-        slug="test-org",
+    ws = Workspace(
+        name="Test 2F",
+        slug=f"test-2f-{uuid.uuid4()}",
+        owner_id=user.id,
+        status=WorkspaceStatus.ACTIVE,
     )
-
-    async_db.add(organization)
+    async_db.add(ws)
     await async_db.commit()
-    await async_db.refresh(organization)
+    await async_db.refresh(ws)
 
     return {
         "user": user,
-        "organization": organization,
+        "ws": ws,
     }
 
 
 @pytest.mark.asyncio
 async def test_api_key_encryption(async_db: AsyncSession, setup_db_2f):
-    organization_id = setup_db_2f["organization"].id
+    ws_id = setup_db_2f["ws"].id
 
     api_key_data = {
-        "organization_id": organization_id,
+        "workspace_id": ws_id,
         "provider": ApiProvider.OPENAI,
         "key_name": "Test Key",
         "secret": "sk-1234567890abcdef",
@@ -65,12 +62,13 @@ async def test_api_key_encryption(async_db: AsyncSession, setup_db_2f):
 
 @pytest.mark.asyncio
 async def test_audit_log_jsonb(async_db: AsyncSession, setup_db_2f):
-    organization_id = setup_db_2f["organization"].id
+    ws_id = setup_db_2f["ws"].id
 
     log = AuditLog(
-        organization_id=organization_id,
+        workspace_id=ws_id,
         action="UPDATE",
-        resource="campaign",
+        resource_type="campaign",
+        resource_id="camp_123",
         old_values={"status": "draft"},
         new_values={"status": "published"},
     )
@@ -81,21 +79,17 @@ async def test_audit_log_jsonb(async_db: AsyncSession, setup_db_2f):
 
     assert log.old_values["status"] == "draft"
 
-    logs = await audit_log_repo.get_by_organization(
-        async_db,
-        organization_id,
-    )
-
+    logs = await audit_log_repo.get_by_workspace(async_db, ws_id)
     assert len(logs) == 1
 
 
 @pytest.mark.asyncio
 async def test_notification_read(async_db: AsyncSession, setup_db_2f):
     user_id = setup_db_2f["user"].id
-    organization_id = setup_db_2f["organization"].id
+    ws_id = setup_db_2f["ws"].id
 
     notification = Notification(
-        organization_id=organization_id,
+        workspace_id=ws_id,
         user_id=user_id,
         title="Welcome",
         body="Welcome to the platform",
@@ -105,21 +99,10 @@ async def test_notification_read(async_db: AsyncSession, setup_db_2f):
     async_db.add(notification)
     await async_db.commit()
 
-    unread = await notification_repo.get_unread_for_user(
-        async_db,
-        user_id,
-    )
-
+    unread = await notification_repo.get_unread_for_user(async_db, user_id)
     assert len(unread) == 1
 
-    await notification_repo.mark_as_read(
-        async_db,
-        unread[0].id,
-    )
+    await notification_repo.mark_as_read(async_db, unread[0].id)
 
-    unread_after = await notification_repo.get_unread_for_user(
-        async_db,
-        user_id,
-    )
-
+    unread_after = await notification_repo.get_unread_for_user(async_db, user_id)
     assert len(unread_after) == 0

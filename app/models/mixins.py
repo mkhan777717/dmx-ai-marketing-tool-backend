@@ -1,15 +1,27 @@
-from datetime import datetime, timezone
 import uuid
-from sqlalchemy.orm import Mapped, mapped_column, declared_attr
-from sqlalchemy import ForeignKey, Boolean
+from datetime import datetime, timezone
+
+from sqlalchemy import Boolean, ForeignKey
+from sqlalchemy.orm import Mapped, declared_attr, mapped_column
+
 
 def get_utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
 
 class TimestampMixin:
     """Mixin for created_at and updated_at timestamps."""
-    created_at: Mapped[datetime] = mapped_column(default=get_utc_now, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(default=get_utc_now, onupdate=get_utc_now, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        default=get_utc_now,
+        nullable=False,
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        default=get_utc_now,
+        onupdate=get_utc_now,
+        nullable=False,
+    )
 
 
 class SoftDeleteMixin:
@@ -26,23 +38,33 @@ class SoftDeleteMixin:
         nullable=True,
         index=True,
     )
+
+
 class TenantMixin:
-    """Mixin for organization isolation (multi-tenancy)."""
+    """Mixin for workspace isolation (multi-tenancy)."""
 
     @declared_attr
-    def organization_id(cls) -> Mapped[uuid.UUID]:
+    def workspace_id(cls) -> Mapped[uuid.UUID]:
         return mapped_column(
-            ForeignKey("organizations.id", ondelete="CASCADE"),
+            ForeignKey("workspaces.id", ondelete="CASCADE"),
             index=True,
             nullable=False,
         )
 
+
 class AuditMixin:
     """Mixin for tracking creator and updater."""
+
     @declared_attr
     def created_by(cls) -> Mapped[uuid.UUID | None]:
-        return mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+        return mapped_column(
+            ForeignKey("users.id", ondelete="SET NULL"),
+            nullable=True,
+        )
 
     @declared_attr
     def updated_by(cls) -> Mapped[uuid.UUID | None]:
-        return mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+        return mapped_column(
+            ForeignKey("users.id", ondelete="SET NULL"),
+            nullable=True,
+        )

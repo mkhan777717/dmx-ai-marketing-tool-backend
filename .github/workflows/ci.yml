@@ -2,14 +2,14 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     services:
       postgres:
         image: postgres:15-alpine
@@ -20,45 +20,90 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
 
       redis:
         image: redis:7-alpine
         ports:
           - 6379:6379
-          
+
+    env:
+      ENVIRONMENT: test
+      DATABASE_URL: postgresql://postgres:postgres_password@localhost:5432/ai_marketing_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_password
+      POSTGRES_DB: ai_marketing_test
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+
+      SECRET_KEY: test_secret_key_12345
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 15
+      REFRESH_TOKEN_EXPIRE_DAYS: 30
+
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python 3.12
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.12"
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install poetry
-        poetry config virtualenvs.create false
-        poetry install --with dev
-    - name: Lint with Ruff
-      run: |
-        ruff check .
-    - name: Test with pytest
-      env:
-        ENVIRONMENT: test
-        POSTGRES_USER: postgres
-        POSTGRES_PASSWORD: postgres_password
-        POSTGRES_DB: ai_marketing_test
-        POSTGRES_HOST: localhost
-        POSTGRES_PORT: 5432
-        REDIS_HOST: localhost
-        REDIS_PORT: 6379
-        REDIS_DB: 0
-        SECRET_KEY: test_secret_key_12345
-        ALGORITHM: HS256
-        ACCESS_TOKEN_EXPIRE_MINUTES: 15
-        REFRESH_TOKEN_EXPIRE_DAYS: 30
-      run: |
-        pytest -v
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Create .env file
+        run: |
+          echo "ENVIRONMENT=${{ env.ENVIRONMENT }}" >> .env
+          echo "DATABASE_URL=${{ env.DATABASE_URL }}" >> .env
+          echo "SECRET_KEY=${{ env.SECRET_KEY }}" >> .env
+          echo "ALGORITHM=${{ env.ALGORITHM }}" >> .env
+          echo "ACCESS_TOKEN_EXPIRE_MINUTES=${{ env.ACCESS_TOKEN_EXPIRE_MINUTES }}" >> .env
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry config virtualenvs.create false
+          poetry install --with dev
+
+      - name: Verify installed packages
+        run: |
+          python --version
+          pip freeze
+
+      - name: Wait for PostgreSQL
+        run: |
+          until pg_isready -h localhost -p 5432 -U postgres; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+
+      - name: Run Alembic migrations
+        run: |
+          alembic upgrade head
+
+      - name: Seed Database
+        run: |
+          python scripts/seed_rbac.py || exit 1
+
+      - name: Verify database tables
+        run: |
+          python -c "from sqlalchemy import create_engine, inspect; from app.config.settings import settings; e=create_engine(settings.DATABASE_URL); print(inspect(e).get_table_names())"
+
+      - name: Lint with Ruff
+        run: |
+          ruff check .
+
+      - name: Check formatting
+        run: |
+          black --check .
+          isort --check-only .
+
+      - name: Run tests
+        run: |
+          pytest -v

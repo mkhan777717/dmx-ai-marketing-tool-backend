@@ -1,69 +1,100 @@
-from datetime import datetime
+import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, String, UniqueConstraint
+from sqlalchemy import Boolean, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
-from app.models.mixins import TimestampMixin
-
+from app.models.mixins import SoftDeleteMixin, TimestampMixin
 
 if TYPE_CHECKING:
-    from .membership import Membership
+    from app.models.user_preference import UserPreference
+    from app.models.workspace import Workspace
 
-class User(Base, TimestampMixin):
-    """
-    Represents an application user.
-    Authentication is handled by Supabase Auth.
-    """
 
+class User(Base, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "users"
 
     __table_args__ = (
         UniqueConstraint("email", name="uq_users_email"),
     )
 
-    supabase_user_id: Mapped[str] = mapped_column(
-        String(255),
-        nullable=False,
+    email: Mapped[str] = mapped_column(
+        String,
         unique=True,
         index=True,
+        nullable=False,
     )
 
-    email: Mapped[str] = mapped_column(
-        String(255),
-        nullable=False,
+    supabase_user_id: Mapped[uuid.UUID] = mapped_column(
+        unique=True,
         index=True,
+        nullable=False,
     )
 
-    full_name: Mapped[str] = mapped_column(
-        String(255),
-        nullable=False,
+    first_name: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+    )
+
+    last_name: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
     )
 
     avatar_url: Mapped[str | None] = mapped_column(
-        String(500),
+        String,
         nullable=True,
+    )
+
+    phone: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+    )
+
+    job_title: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+    )
+
+    language: Mapped[str] = mapped_column(
+        String,
+        default="en",
+    )
+
+    default_workspace_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    onboarding_completed: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
     )
 
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         default=True,
-        nullable=False,
     )
 
-    is_verified: Mapped[bool] = mapped_column(
-        Boolean,
-        default=False,
-        nullable=False,
+    preferences: Mapped["UserPreference"] = relationship(
+        "UserPreference",
+        back_populates="user",
+        uselist=False,
+        lazy="selectin",
+        cascade="all, delete-orphan",
     )
 
-    last_login_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True),
-        nullable=True,
+    owned_workspaces: Mapped[list["Workspace"]] = relationship(
+        "Workspace",
+        back_populates="owner",
+        foreign_keys="Workspace.owner_id",
+        lazy="selectin",
     )
-    memberships: Mapped[list["Membership"]] = relationship(
-    "Membership",
-    back_populates="user",
-    cascade="all, delete-orphan",
-)
+
+    default_workspace: Mapped["Workspace"] = relationship(
+        "Workspace",
+        foreign_keys=[default_workspace_id],
+        lazy="selectin",
+        post_update=True,
+    )

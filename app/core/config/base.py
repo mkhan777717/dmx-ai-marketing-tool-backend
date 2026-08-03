@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 
+
 class AppBaseSettings(BaseSettings):
     PROJECT_NAME: str = "AI Marketing Platform"
     ENVIRONMENT: str = "development"

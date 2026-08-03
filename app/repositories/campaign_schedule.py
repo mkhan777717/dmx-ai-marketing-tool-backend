@@ -15,15 +15,15 @@ class CampaignScheduleRepository(BaseRepository[CampaignSchedule]):
         self,
         db: AsyncSession,
         campaign_id: uuid.UUID,
-        organization_id: uuid.UUID | None = None,
+        workspace_id: uuid.UUID | None = None,
     ) -> CampaignSchedule | None:
         stmt = select(self.model).where(
             self.model.campaign_id == campaign_id
         )
 
-        if organization_id is not None:
+        if workspace_id is not None:
             stmt = stmt.where(
-                self.model.organization_id == organization_id
+                self.model.workspace_id == workspace_id
             )
 
         result = await db.execute(stmt)

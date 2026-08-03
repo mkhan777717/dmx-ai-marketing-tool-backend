@@ -1,50 +1,54 @@
 import pytest
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
 
-from httpx import AsyncClient, ASGITransport
-
-from sqlalchemy.ext.asyncio import (
-    AsyncSession,
-    async_sessionmaker,
-    create_async_engine,
-)
-
+from app.config.settings import settings
+from app.db.session import get_db_session
 from app.main import app
 
-# Import all models so SQLAlchemy registers every table
-import app.models
 
-from app.models import Base
-
-
-# @pytest.fixture
-# async def async_client():
-#     async with AsyncClient(
-#         transport=ASGITransport(app=app),
-#         base_url="http://test",
-#     ) as client:
-#         yield client
+@pytest.fixture
+async def async_client():
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test",
+    ) as client:
+        yield client
 
 
 @pytest.fixture
 async def async_db():
-    engine = create_async_engine(
-        "sqlite+aiosqlite:///:memory:",
-        echo=False,
+    async_url = (
+        settings.DATABASE_URL.replace(
+            "postgresql://",
+            "postgresql+asyncpg://",
+        )
+        if settings.DATABASE_URL.startswith("postgresql://")
+        else settings.DATABASE_URL
     )
 
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    engine = create_async_engine(
+        async_url,
+        pool_pre_ping=True,
+        connect_args={"statement_cache_size": 0},
+    )
 
-    TestingSessionLocal = async_sessionmaker(
-        bind=engine,
+    async_session = sessionmaker(
+        engine,
         class_=AsyncSession,
         expire_on_commit=False,
     )
 
-    async with TestingSessionLocal() as session:
-        yield session
+    try:
+        async with async_session() as session:
+            yield session
+    finally:
+        await engine.dispose()
 
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
 
-    await engine.dispose()
+@pytest.fixture(autouse=True)
+def override_dependencies(async_db):
+    app.dependency_overrides[get_db_session] = lambda: async_db
+    yield
+    app.dependency_overrides.clear()
