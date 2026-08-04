@@ -70,8 +70,8 @@ async def test_get_dashboard(
         )
 
         assert response.status_code == 200
-        assert response.json()["campaign_metrics"]["total_campaigns"] == 5
-        assert response.json()["workspace_id"] == str(mock_workspace_id)
+        assert response.json()["data"]["campaign_metrics"]["total_campaigns"] == 5
+        assert response.json()["data"]["workspace_id"] == str(mock_workspace_id)
 
 
 @pytest.mark.asyncio
@@ -101,7 +101,7 @@ async def test_get_overview(
         )
 
         assert response.status_code == 200
-        assert response.json()["snapshot_type"] == "DAILY"
+        assert response.json()["data"]["snapshot_type"] == "DAILY"
 
 
 @pytest.mark.asyncio
@@ -116,7 +116,7 @@ async def test_list_campaigns(
             f"/api/v1/workspaces/{mock_workspace_id}/analytics/campaigns"
         )
         assert response.status_code == 200
-        assert response.json() == []
+        assert response.json()["data"] == []
 
 
 @pytest.mark.asyncio
@@ -131,4 +131,4 @@ async def test_list_ai_usage(
             f"/api/v1/workspaces/{mock_workspace_id}/analytics/ai"
         )
         assert response.status_code == 200
-        assert response.json() == []
+        assert response.json()["data"] == []

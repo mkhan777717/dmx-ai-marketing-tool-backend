@@ -133,8 +133,8 @@ async def test_publish_content(
         )
 
         assert response.status_code == 200
-        assert response.json()["status"] == "PUBLISHED"
-        assert response.json()["external_post_id"] == "ext_post_123"
+        assert response.json()["data"]["status"] == "PUBLISHED"
+        assert response.json()["data"]["external_post_id"] == "ext_post_123"
 
 
 @pytest.mark.asyncio
@@ -164,4 +164,4 @@ async def test_list_publish_history(
             f"/api/v1/workspaces/{mock_workspace_id}/publishing/history"
         )
         assert response.status_code == 200
-        assert response.json() == []
+        assert response.json()["data"] == []

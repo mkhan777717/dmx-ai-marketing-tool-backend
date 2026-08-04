@@ -69,7 +69,7 @@ async def test_generate_ai_content(
     )
 
     assert response.status_code == 200
-    data = response.json()
+    data = response.json()["data"]
     assert data["content_type"] == "SOCIAL_POST"
     assert "mock generated content" in data["body"]
     assert data["provider_used"] == "MOCK"
@@ -113,8 +113,8 @@ async def test_create_campaign_content(
         )
 
         assert response.status_code == 201
-        assert response.json()["title"] == "Generated Draft"
-        assert response.json()["version"] == 1
+        assert response.json()["data"]["title"] == "Generated Draft"
+        assert response.json()["data"]["version"] == 1
 
 
 @pytest.mark.asyncio
@@ -129,4 +129,4 @@ async def test_list_campaign_contents(
             f"/api/v1/workspaces/{mock_workspace_id}/campaigns/{mock_campaign_id}/contents"
         )
         assert response.status_code == 200
-        assert response.json() == []
+        assert response.json()["data"] == []

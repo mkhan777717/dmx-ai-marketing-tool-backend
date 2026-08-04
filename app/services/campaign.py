@@ -61,8 +61,21 @@ class CampaignService:
 
     @staticmethod
     async def get_campaigns(
-        db: AsyncSession, workspace_id: uuid.UUID, skip: int = 0, limit: int = 100
+        db: AsyncSession,
+        workspace_id: uuid.UUID,
+        skip: int = 0,
+        limit: int = 100,
+        status: CampaignStatus | None = None,
+        search: str | None = None,
     ) -> Sequence[Campaign]:
+        if search:
+            return await campaign_repo.search_campaigns(
+                db, workspace_id, search, skip, limit
+            )
+        if status:
+            return await campaign_repo.get_by_status(
+                db, workspace_id, status, skip, limit
+            )
         return await campaign_repo.get_by_workspace_id(db, workspace_id, skip, limit)
 
     @staticmethod

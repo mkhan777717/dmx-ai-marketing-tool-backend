@@ -57,14 +57,17 @@ class CampaignAnalyticsRepository(BaseRepository[CampaignAnalytics]):
         return result.scalar_one_or_none()
 
     async def get_by_workspace_id(
-        self, db: AsyncSession, workspace_id: uuid.UUID, skip: int = 0, limit: int = 100
+        self,
+        db: AsyncSession,
+        workspace_id: uuid.UUID,
+        skip: int = 0,
+        limit: int = 100,
+        campaign_id: uuid.UUID | None = None,
     ) -> Sequence[CampaignAnalytics]:
-        stmt = (
-            select(self.model)
-            .where(self.model.workspace_id == workspace_id)
-            .offset(skip)
-            .limit(limit)
-        )
+        stmt = select(self.model).where(self.model.workspace_id == workspace_id)
+        if campaign_id:
+            stmt = stmt.where(self.model.campaign_id == campaign_id)
+        stmt = stmt.offset(skip).limit(limit)
         result = await db.execute(stmt)
         return result.scalars().all()
 

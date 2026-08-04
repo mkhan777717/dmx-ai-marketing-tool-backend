@@ -83,8 +83,8 @@ async def test_create_campaign(
         )
 
         assert response.status_code == 201
-        assert response.json()["campaign_name"] == "Test Campaign"
-        assert response.json()["status"] == "DRAFT"
+        assert response.json()["data"]["campaign_name"] == "Test Campaign"
+        assert response.json()["data"]["status"] == "DRAFT"
 
 
 @pytest.mark.asyncio
@@ -108,4 +108,4 @@ async def test_list_campaigns(
             f"/api/v1/workspaces/{mock_workspace_id}/campaigns"
         )
         assert response.status_code == 200
-        assert response.json() == []
+        assert response.json()["data"] == []

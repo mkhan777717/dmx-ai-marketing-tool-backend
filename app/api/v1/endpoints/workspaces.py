@@ -12,6 +12,7 @@ from app.api.dependencies.auth import (
 from app.db.session import get_db_session
 from app.models.user import User
 from app.models.workspace import Workspace
+from app.repositories.workspace import workspace_repo
 from app.schemas.responses import ApiResponse
 from app.schemas.workspace import (
     WorkspaceCreate,
@@ -49,17 +50,15 @@ async def create_workspace(
 
 
 @router.get("", response_model=ApiResponse[list[WorkspaceResponse]])
-async def get_workspaces(user: User = Depends(get_current_user)) -> Any:
+async def get_workspaces(
+    user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db_session)
+) -> Any:
     # A user can list their owned workspaces and workspaces they are a member of.
-    # The models are lazy="selectin" so we can access user.owned_workspaces directly
-    # Wait, the user object doesn't automatically load relationships unless specified.
-    # We should query the repo for workspaces the user has access to, or use a service method.
-    # For now, let's just return owned_workspaces + member workspaces.
-    # We will need to query this properly. Let's do a simple implementation.
+    workspaces = await workspace_repo.get_user_workspaces(db, user.id)
     return ApiResponse(
         success=True,
         message="Workspaces retrieved",
-        data=[WorkspaceResponse.model_validate(w) for w in user.owned_workspaces],
+        data=[WorkspaceResponse.model_validate(w) for w in workspaces],
     )
 
 

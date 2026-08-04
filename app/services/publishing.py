@@ -66,8 +66,22 @@ class PublishingService:
 
     @staticmethod
     async def get_publish_history(
-        db: AsyncSession, workspace_id: uuid.UUID, skip: int = 0, limit: int = 100
+        db: AsyncSession,
+        workspace_id: uuid.UUID,
+        skip: int = 0,
+        limit: int = 100,
+        campaign_id: uuid.UUID | None = None,
+        content_id: uuid.UUID | None = None,
+        status: str | None = None,
+        social_account_id: uuid.UUID | None = None,
     ) -> Sequence[PublishHistory]:
         return await publish_history_repo.get_by_workspace_id(
-            db, workspace_id, skip, limit
+            db,
+            workspace_id,
+            skip,
+            limit,
+            campaign_id,
+            content_id,
+            status,
+            social_account_id,
         )
