@@ -2,12 +2,10 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Enum as SQLEnum
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.constants.enums import NotificationPriority, NotificationType
 from app.models.base import Base
 from app.models.mixins import TenantMixin, get_utc_now
 
@@ -16,46 +14,58 @@ if TYPE_CHECKING:
     from app.models.workspace import Workspace
 
 
-class Notification(Base, TenantMixin):
-    __tablename__ = "notifications"
+class AuditLog(Base, TenantMixin):
+    __tablename__ = "audit_logs"
 
     # workspace_id inherited from TenantMixin
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"),
+
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"),
         index=True,
-        nullable=False,
+        nullable=True,
     )
 
-    title: Mapped[str] = mapped_column(
+    action: Mapped[str] = mapped_column(
         String,
+        index=True,
         nullable=False,
     )
 
-    body: Mapped[str] = mapped_column(
+    resource: Mapped[str] = mapped_column(
         String,
-        nullable=False,
-    )
-
-    type: Mapped[NotificationType] = mapped_column(
-        SQLEnum(NotificationType),
-        default=NotificationType.SYSTEM,
         index=True,
         nullable=False,
     )
 
-    priority: Mapped[NotificationPriority] = mapped_column(
-        SQLEnum(NotificationPriority),
-        default=NotificationPriority.NORMAL,
+    resource_id: Mapped[str | None] = mapped_column(
+        String,
         index=True,
-        nullable=False,
+        nullable=True,
     )
 
-    data: Mapped[dict | list | None] = mapped_column(
+    old_values: Mapped[dict | list | None] = mapped_column(
         JSONB,
         nullable=True,
     )
 
-    read_at: Mapped[datetime | None] = mapped_column(
+    new_values: Mapped[dict | list | None] = mapped_column(
+        JSONB,
+        nullable=True,
+    )
+
+    metadata_info: Mapped[dict | list | None] = mapped_column(
+        JSONB,
+        nullable=True,
+    )
+
+    request_id: Mapped[str | None] = mapped_column(
+        String,
+        index=True,
+        nullable=True,
+    )
+
+    ip_address: Mapped[str | None] = mapped_column(
+        String,
         nullable=True,
     )
 

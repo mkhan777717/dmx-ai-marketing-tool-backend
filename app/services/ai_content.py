@@ -12,6 +12,7 @@ from app.schemas.campaign_content import (
     AIContentGenerateRequest,
     AIContentGenerateResponse,
     CampaignContentCreate,
+    CampaignContentUpdate,
 )
 from app.services.ai.factory import AIProviderFactory
 
@@ -91,3 +92,49 @@ class AIContentService:
         return await campaign_content_repo.get_by_campaign_id(
             db, campaign_id, skip, limit
         )
+
+    @staticmethod
+    async def get_content(
+        db: AsyncSession,
+        workspace_id: uuid.UUID,
+        campaign_id: uuid.UUID,
+        content_id: uuid.UUID,
+    ) -> CampaignContent:
+        content = await campaign_content_repo.get_by_id(db, id=content_id)
+        if (
+            not content
+            or content.workspace_id != workspace_id
+            or content.campaign_id != campaign_id
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Content not found"
+            )
+        return content
+
+    @staticmethod
+    async def update_content(
+        db: AsyncSession,
+        workspace_id: uuid.UUID,
+        campaign_id: uuid.UUID,
+        content_id: uuid.UUID,
+        content_in: CampaignContentUpdate,
+    ) -> CampaignContent:
+        content = await AIContentService.get_content(
+            db, workspace_id, campaign_id, content_id
+        )
+        update_data = content_in.model_dump(exclude_unset=True)
+        return await campaign_content_repo.update(
+            db, db_obj=content, obj_in=update_data
+        )
+
+    @staticmethod
+    async def delete_content(
+        db: AsyncSession,
+        workspace_id: uuid.UUID,
+        campaign_id: uuid.UUID,
+        content_id: uuid.UUID,
+    ) -> CampaignContent:
+        content = await AIContentService.get_content(
+            db, workspace_id, campaign_id, content_id
+        )
+        return await campaign_content_repo.remove(db, id=content.id)

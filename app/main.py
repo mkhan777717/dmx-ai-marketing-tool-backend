@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
 from app.api.v1.api import api_router
+from app.api.v1.endpoints.health import router as health_router
 from app.core.logger import logger
 from app.exceptions.handlers import register_exception_handlers
 from app.middleware.cors import add_cors_middleware
@@ -55,3 +56,5 @@ app.include_router(admin_router)
 app.include_router(feature_flags_router)
 app.include_router(config_router)
 app.include_router(announcements_router)
+
+app.include_router(health_router)

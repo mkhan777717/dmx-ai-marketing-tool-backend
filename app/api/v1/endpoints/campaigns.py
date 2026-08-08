@@ -9,6 +9,7 @@ from app.api.dependencies.auth import (
     get_current_workspace,
     require_permission,
 )
+from app.constants.enums import CampaignStatus
 from app.db.session import get_db_session
 from app.models.user import User
 from app.schemas.campaign import (
@@ -17,6 +18,7 @@ from app.schemas.campaign import (
     CampaignStatusUpdate,
     CampaignUpdate,
 )
+from app.schemas.responses import ApiResponse
 from app.services.campaign import CampaignService
 
 router = APIRouter()
@@ -24,7 +26,7 @@ router = APIRouter()
 
 @router.post(
     "/{workspace_id}/campaigns",
-    response_model=CampaignResponse,
+    response_model=ApiResponse[CampaignResponse],
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(require_permission("campaign", "create"))],
 )
@@ -38,32 +40,38 @@ async def create_campaign(
     """
     Create a new campaign within a workspace.
     """
-    return await CampaignService.create_campaign(
+    campaign = await CampaignService.create_campaign(
         db, workspace_id, current_user.id, campaign_in
     )
+    return ApiResponse(success=True, message="Campaign created", data=campaign)
 
 
 @router.get(
     "/{workspace_id}/campaigns",
-    response_model=Sequence[CampaignResponse],
+    response_model=ApiResponse[Sequence[CampaignResponse]],
     dependencies=[Depends(require_permission("campaign", "read"))],
 )
 async def list_campaigns(
     workspace_id: uuid.UUID,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),
+    campaign_status: CampaignStatus | None = Query(None, alias="status"),
+    search: str | None = Query(None),
     db: AsyncSession = Depends(get_db_session),
     _=Depends(get_current_workspace),
 ):
     """
     List campaigns in a workspace.
     """
-    return await CampaignService.get_campaigns(db, workspace_id, skip, limit)
+    campaigns = await CampaignService.get_campaigns(
+        db, workspace_id, skip, limit, campaign_status, search
+    )
+    return ApiResponse(success=True, message="Campaigns retrieved", data=campaigns)
 
 
 @router.get(
     "/{workspace_id}/campaigns/{campaign_id}",
-    response_model=CampaignResponse,
+    response_model=ApiResponse[CampaignResponse],
     dependencies=[Depends(require_permission("campaign", "read"))],
 )
 async def get_campaign(
@@ -75,12 +83,13 @@ async def get_campaign(
     """
     Get a specific campaign by ID.
     """
-    return await CampaignService.get_campaign(db, workspace_id, campaign_id)
+    campaign = await CampaignService.get_campaign(db, workspace_id, campaign_id)
+    return ApiResponse(success=True, message="Campaign retrieved", data=campaign)
 
 
 @router.put(
     "/{workspace_id}/campaigns/{campaign_id}",
-    response_model=CampaignResponse,
+    response_model=ApiResponse[CampaignResponse],
     dependencies=[Depends(require_permission("campaign", "update"))],
 )
 async def update_campaign(
@@ -93,14 +102,15 @@ async def update_campaign(
     """
     Update a campaign.
     """
-    return await CampaignService.update_campaign(
+    campaign = await CampaignService.update_campaign(
         db, workspace_id, campaign_id, campaign_in
     )
+    return ApiResponse(success=True, message="Campaign updated", data=campaign)
 
 
 @router.delete(
     "/{workspace_id}/campaigns/{campaign_id}",
-    response_model=CampaignResponse,
+    response_model=ApiResponse[CampaignResponse],
     dependencies=[Depends(require_permission("campaign", "delete"))],
 )
 async def delete_campaign(
@@ -112,12 +122,13 @@ async def delete_campaign(
     """
     Soft delete a campaign.
     """
-    return await CampaignService.delete_campaign(db, workspace_id, campaign_id)
+    campaign = await CampaignService.delete_campaign(db, workspace_id, campaign_id)
+    return ApiResponse(success=True, message="Campaign deleted", data=campaign)
 
 
 @router.post(
     "/{workspace_id}/campaigns/{campaign_id}/status",
-    response_model=CampaignResponse,
+    response_model=ApiResponse[CampaignResponse],
     dependencies=[Depends(require_permission("campaign", "update"))],
 )
 async def change_campaign_status(
@@ -130,6 +141,7 @@ async def change_campaign_status(
     """
     Change the status of a campaign (e.g. publish, pause, archive).
     """
-    return await CampaignService.change_status(
+    campaign = await CampaignService.change_status(
         db, workspace_id, campaign_id, status_update
     )
+    return ApiResponse(success=True, message="Campaign status changed", data=campaign)

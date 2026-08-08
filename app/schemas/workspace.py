@@ -42,7 +42,6 @@ class WorkspaceUpdate(BaseModel):
     default_language: str | None = None
     status: WorkspaceStatus | None = None
     plan_id: uuid.UUID | None = None
-    owner_id: uuid.UUID | None = None
     updated_by: uuid.UUID | None = None
 
 

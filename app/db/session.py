@@ -1,5 +1,9 @@
 from sqlalchemy import create_engine
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 from sqlalchemy.orm import sessionmaker
 
 from app.config.settings import settings
@@ -26,10 +30,14 @@ if settings.DATABASE_URL:
     )
 
     async_url = (
-        settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
+        settings.DATABASE_URL.replace(
+            "postgresql://",
+            "postgresql+asyncpg://",
+        )
         if settings.DATABASE_URL.startswith("postgresql://")
         else settings.DATABASE_URL
     )
+
     async_engine = create_async_engine(
         async_url,
         echo=settings.DEBUG,
@@ -37,6 +45,7 @@ if settings.DATABASE_URL:
         pool_pre_ping=True,
         connect_args={"statement_cache_size": 0},
     )
+
     AsyncSessionLocal = async_sessionmaker(
         bind=async_engine,
         autoflush=False,
@@ -48,14 +57,12 @@ if settings.DATABASE_URL:
 
 def get_db():
     """
-    Dependency that provides a SQLAlchemy database session.
+    Sync DB dependency.
     """
-
     if SessionLocal is None:
         raise RuntimeError("Database is not configured.")
 
     db = SessionLocal()
-
     try:
         yield db
     finally:
@@ -64,7 +71,7 @@ def get_db():
 
 async def get_db_session():
     """
-    Dependency that provides an asynchronous SQLAlchemy database session.
+    Async DB dependency.
     """
     if AsyncSessionLocal is None:
         raise RuntimeError("Async Database is not configured.")

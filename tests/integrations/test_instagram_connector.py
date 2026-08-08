@@ -46,7 +46,6 @@ async def test_connect_success(instagram_connector):
             new_callable=AsyncMock,
         ) as mock_sync,
     ):
-
         mock_exchange.return_value = mock_token_response
         mock_sync.return_value = mock_sync_response
 

@@ -19,8 +19,11 @@ class ApiKey(Base, TimestampMixin, TenantMixin):
 
     # workspace_id inherited from TenantMixin
     provider: Mapped[ApiProvider] = mapped_column(
-        SQLEnum(ApiProvider), index=True, nullable=False
+        SQLEnum(ApiProvider),
+        index=True,
+        nullable=False,
     )
+
     key_name: Mapped[str] = mapped_column(String, nullable=False)
 
     encrypted_secret: Mapped[str] = mapped_column(String, nullable=False)
@@ -29,7 +32,13 @@ class ApiKey(Base, TimestampMixin, TenantMixin):
     expires_at: Mapped[datetime | None] = mapped_column(nullable=True)
 
     is_active: Mapped[bool] = mapped_column(
-        Boolean, default=True, index=True, nullable=False
+        Boolean,
+        default=True,
+        index=True,
+        nullable=False,
     )
 
-    workspace: Mapped["Workspace"] = relationship("Workspace", lazy="selectin")
+    workspace: Mapped["Workspace"] = relationship(
+        "Workspace",
+        lazy="selectin",
+    )

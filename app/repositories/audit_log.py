@@ -10,7 +10,10 @@ from app.repositories.base import BaseRepository
 
 class AuditLogRepository(BaseRepository[AuditLog]):
     async def get_by_workspace(
-        self, db: AsyncSession, workspace_id: uuid.UUID, limit: int = 100
+        self,
+        db: AsyncSession,
+        workspace_id: uuid.UUID,
+        limit: int = 100,
     ) -> Sequence[AuditLog]:
         stmt = (
             select(self.model)

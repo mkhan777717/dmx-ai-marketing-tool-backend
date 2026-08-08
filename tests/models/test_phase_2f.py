@@ -15,9 +15,13 @@ from app.repositories.notification import notification_repo
 
 @pytest.fixture
 async def setup_db_2f(async_db: AsyncSession):
-    user = User(email=f"test2f_{uuid.uuid4()}@test.com", supabase_user_id=uuid.uuid4())
+    user = User(
+        email=f"test2f_{uuid.uuid4()}@test.com",
+        supabase_user_id=uuid.uuid4(),
+    )
     async_db.add(user)
     await async_db.commit()
+    await async_db.refresh(user)
 
     ws = Workspace(
         name="Test 2F",
@@ -27,14 +31,18 @@ async def setup_db_2f(async_db: AsyncSession):
     )
     async_db.add(ws)
     await async_db.commit()
-    return {"user": user, "ws": ws}
+    await async_db.refresh(ws)
+
+    return {
+        "user": user,
+        "ws": ws,
+    }
 
 
 @pytest.mark.asyncio
 async def test_api_key_encryption(async_db: AsyncSession, setup_db_2f):
     ws_id = setup_db_2f["ws"].id
 
-    # Test encryption creation
     api_key_data = {
         "workspace_id": ws_id,
         "provider": ApiProvider.OPENAI,
@@ -47,8 +55,8 @@ async def test_api_key_encryption(async_db: AsyncSession, setup_db_2f):
     assert key.id is not None
     assert key.encrypted_secret != "sk-1234567890abcdef"
 
-    # Test decryption
     decrypted = api_key_repo.decrypt_secret(key.encrypted_secret)
+
     assert decrypted == "sk-1234567890abcdef"
 
 
@@ -64,6 +72,7 @@ async def test_audit_log_jsonb(async_db: AsyncSession, setup_db_2f):
         old_values={"status": "draft"},
         new_values={"status": "published"},
     )
+
     async_db.add(log)
     await async_db.commit()
     await async_db.refresh(log)
@@ -79,14 +88,15 @@ async def test_notification_read(async_db: AsyncSession, setup_db_2f):
     user_id = setup_db_2f["user"].id
     ws_id = setup_db_2f["ws"].id
 
-    n1 = Notification(
+    notification = Notification(
         workspace_id=ws_id,
         user_id=user_id,
         title="Welcome",
         body="Welcome to the platform",
         data={"link": "/dashboard"},
     )
-    async_db.add(n1)
+
+    async_db.add(notification)
     await async_db.commit()
 
     unread = await notification_repo.get_unread_for_user(async_db, user_id)

@@ -14,6 +14,7 @@ from app.schemas.analytics import (
     CampaignAnalyticsResponse,
     DashboardOverviewResponse,
 )
+from app.schemas.responses import ApiResponse
 from app.services.analytics.core import AnalyticsService
 from app.services.analytics.dashboard import DashboardService
 
@@ -22,7 +23,7 @@ router = APIRouter()
 
 @router.get(
     "/{workspace_id}/analytics/dashboard",
-    response_model=DashboardOverviewResponse,
+    response_model=ApiResponse[DashboardOverviewResponse],
     status_code=status.HTTP_200_OK,
     dependencies=[Depends(require_permission("analytics", "dashboard"))],
 )
@@ -34,12 +35,15 @@ async def get_dashboard(
     """
     Get the real-time aggregated dashboard overview metrics for the workspace.
     """
-    return await DashboardService.get_dashboard_overview(db, workspace_id)
+    dashboard = await DashboardService.get_dashboard_overview(db, workspace_id)
+    return ApiResponse(
+        success=True, message="Dashboard metrics retrieved", data=dashboard
+    )
 
 
 @router.get(
     "/{workspace_id}/analytics/overview",
-    response_model=AnalyticsSnapshotResponse,
+    response_model=ApiResponse[AnalyticsSnapshotResponse],
     status_code=status.HTTP_200_OK,
     dependencies=[Depends(require_permission("analytics", "read"))],
 )
@@ -53,12 +57,17 @@ async def get_analytics_overview(
     Get the latest analytics snapshot for the workspace.
     Generates a new snapshot if none exists for today.
     """
-    return await AnalyticsService.get_latest_snapshot(db, workspace_id, snapshot_type)
+    snapshot = await AnalyticsService.get_latest_snapshot(
+        db, workspace_id, snapshot_type
+    )
+    return ApiResponse(
+        success=True, message="Analytics overview retrieved", data=snapshot
+    )
 
 
 @router.get(
     "/{workspace_id}/analytics/campaigns",
-    response_model=Sequence[CampaignAnalyticsResponse],
+    response_model=ApiResponse[Sequence[CampaignAnalyticsResponse]],
     status_code=status.HTTP_200_OK,
     dependencies=[Depends(require_permission("analytics", "read"))],
 )
@@ -66,20 +75,24 @@ async def list_campaign_analytics(
     workspace_id: uuid.UUID,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),
+    campaign_id: uuid.UUID | None = Query(None),
     db: AsyncSession = Depends(get_db_session),
     _=Depends(get_current_workspace),
 ):
     """
     Get detailed granular campaign analytics.
     """
-    return await campaign_analytics_repo.get_by_workspace_id(
-        db, workspace_id, skip, limit
+    campaigns = await campaign_analytics_repo.get_by_workspace_id(
+        db, workspace_id, skip, limit, campaign_id
+    )
+    return ApiResponse(
+        success=True, message="Campaign analytics retrieved", data=campaigns
     )
 
 
 @router.get(
     "/{workspace_id}/analytics/ai",
-    response_model=Sequence[AIUsageResponse],
+    response_model=ApiResponse[Sequence[AIUsageResponse]],
     status_code=status.HTTP_200_OK,
     dependencies=[Depends(require_permission("analytics", "read"))],
 )
@@ -93,4 +106,5 @@ async def list_ai_usage_analytics(
     """
     Get detailed granular AI usage analytics.
     """
-    return await ai_usage_repo.get_by_workspace_id(db, workspace_id, skip, limit)
+    usage = await ai_usage_repo.get_by_workspace_id(db, workspace_id, skip, limit)
+    return ApiResponse(success=True, message="AI usage retrieved", data=usage)

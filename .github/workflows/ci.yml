@@ -44,6 +44,7 @@ jobs:
       REDIS_DB: 0
 
       SECRET_KEY: test_secret_key_12345
+      ENCRYPTION_KEY: UO6OjOeuk1EWRzep-3ADBA6sZ3JsUPTky_2eDBK1awM=
       ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 15
       REFRESH_TOKEN_EXPIRE_DAYS: 30
@@ -61,6 +62,7 @@ jobs:
           echo "ENVIRONMENT=${{ env.ENVIRONMENT }}" >> .env
           echo "DATABASE_URL=${{ env.DATABASE_URL }}" >> .env
           echo "SECRET_KEY=${{ env.SECRET_KEY }}" >> .env
+          echo "ENCRYPTION_KEY=${{ env.ENCRYPTION_KEY }}" >> .env
           echo "ALGORITHM=${{ env.ALGORITHM }}" >> .env
           echo "ACCESS_TOKEN_EXPIRE_MINUTES=${{ env.ACCESS_TOKEN_EXPIRE_MINUTES }}" >> .env
 

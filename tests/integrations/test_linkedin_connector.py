@@ -37,7 +37,6 @@ async def test_connect_success(linkedin_connector):
             new_callable=AsyncMock,
         ) as mock_fetch,
     ):
-
         mock_exchange.return_value = mock_token_response
         mock_fetch.return_value = mock_profile_response
 

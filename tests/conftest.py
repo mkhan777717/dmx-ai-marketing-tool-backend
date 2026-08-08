@@ -11,7 +11,8 @@ from app.main import app
 @pytest.fixture
 async def async_client():
     async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
+        transport=ASGITransport(app=app),
+        base_url="http://test",
     ) as client:
         yield client
 
@@ -19,14 +20,26 @@ async def async_client():
 @pytest.fixture
 async def async_db():
     async_url = (
-        settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
+        settings.DATABASE_URL.replace(
+            "postgresql://",
+            "postgresql+asyncpg://",
+        )
         if settings.DATABASE_URL.startswith("postgresql://")
         else settings.DATABASE_URL
     )
+
     engine = create_async_engine(
-        async_url, pool_pre_ping=True, connect_args={"statement_cache_size": 0}
+        async_url,
+        pool_pre_ping=True,
+        connect_args={"statement_cache_size": 0},
     )
-    async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+    async_session = sessionmaker(
+        engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+    )
+
     try:
         async with async_session() as session:
             yield session

@@ -4,7 +4,6 @@ from app.api.v1.campaign_schedule import router as campaign_schedule_router
 from app.api.v1.endpoints.analytics import router as analytics_router
 from app.api.v1.endpoints.campaign_content import router as campaign_content_router
 from app.api.v1.endpoints.campaigns import router as campaigns_router
-from app.api.v1.endpoints.health import router as health_router
 from app.api.v1.endpoints.integrations import router as integrations_router
 from app.api.v1.endpoints.invites import router as invites_router
 from app.api.v1.endpoints.members import router as members_router
@@ -16,13 +15,15 @@ from app.api.v1.endpoints.workspaces import router as workspaces_router
 api_router = APIRouter()
 
 api_router.include_router(
-    health_router,
-    tags=["Health"],
+    workspaces_router,
+    prefix="/workspaces",
+    tags=["Workspaces"],
 )
 
-api_router.include_router(workspaces_router, prefix="/workspaces", tags=["Workspaces"])
 api_router.include_router(
-    integrations_router, prefix="/integrations", tags=["Integrations"]
+    integrations_router,
+    prefix="/integrations",
+    tags=["Integrations"],
 )
 
 api_router.include_router(
@@ -72,4 +73,6 @@ api_router.include_router(
     tags=["Notifications"],
 )
 
-api_router.include_router(campaign_schedule_router)
+api_router.include_router(
+    campaign_schedule_router,
+)
