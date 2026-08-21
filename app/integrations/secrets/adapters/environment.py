@@ -1,6 +1,7 @@
 import logging
 import os
 from typing import Protocol
+
 from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)

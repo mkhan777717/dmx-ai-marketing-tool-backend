@@ -9,7 +9,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.services.supabase_auth import SupabaseAuthService
 
-
 # --- ES256 key pair fixture (generated once per test module) ---
 
 _ec_private_key = ec.generate_private_key(ec.SECP256R1())

@@ -1,8 +1,9 @@
-import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
-from app.integrations.connectors.facebook.publisher import FacebookPublisher
+import pytest
+
 from app.integrations.connectors.facebook.exceptions import FacebookPublishError
+from app.integrations.connectors.facebook.publisher import FacebookPublisher
 
 
 @pytest.fixture

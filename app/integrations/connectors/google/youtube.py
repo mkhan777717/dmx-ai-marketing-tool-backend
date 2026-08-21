@@ -1,5 +1,6 @@
-import httpx
 import logging
+
+import httpx
 
 from app.integrations.connectors.google.exceptions import (
     GoogleApiError,

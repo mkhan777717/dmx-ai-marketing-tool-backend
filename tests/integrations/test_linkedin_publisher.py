@@ -1,7 +1,8 @@
-import pytest
 import os
 from unittest.mock import AsyncMock, patch
-from httpx import Response, Request
+
+import pytest
+from httpx import Request, Response
 
 from app.integrations.connectors.linkedin.exceptions import LinkedInPublishError
 from app.integrations.connectors.linkedin.publisher import LinkedInPublisher

@@ -1,6 +1,7 @@
-import httpx
 import asyncio
 from typing import AsyncIterable, Union
+
+import httpx
 
 from app.integrations.connectors.twitter.exceptions import (
     TwitterAuthError,

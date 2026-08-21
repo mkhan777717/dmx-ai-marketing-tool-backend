@@ -1,13 +1,14 @@
-import pytest
 import uuid
 from unittest.mock import AsyncMock, patch
+
+import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.integrations.sync.engine import SyncEngine
-from app.integrations.oauth.models import ConnectionStatus, IntegrationConnection
-from app.integrations.exceptions import OAuthTokenError
 from app.integrations.connectors.facebook.exceptions import FacebookApiError
+from app.integrations.exceptions import OAuthTokenError
+from app.integrations.oauth.models import ConnectionStatus, IntegrationConnection
 from app.integrations.oauth.service import integration_service
+from app.integrations.sync.engine import SyncEngine
 
 
 @pytest.mark.asyncio

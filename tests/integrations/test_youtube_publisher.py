@@ -1,12 +1,14 @@
-import pytest
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import httpx
-from unittest.mock import patch, MagicMock, AsyncMock
-from app.integrations.connectors.google.youtube import YouTubePublisher
+import pytest
+
 from app.integrations.connectors.google.exceptions import (
     GoogleApiError,
     GoogleAuthError,
     GoogleQuotaError,
 )
+from app.integrations.connectors.google.youtube import YouTubePublisher
 
 
 @pytest.fixture

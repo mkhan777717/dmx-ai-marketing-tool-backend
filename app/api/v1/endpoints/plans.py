@@ -11,7 +11,6 @@ from app.schemas.plan import PlanCreate, PlanResponse, PlanUpdate
 from app.schemas.responses import ApiResponse
 from app.services.plan import plan_service
 
-
 router = APIRouter()
 
 

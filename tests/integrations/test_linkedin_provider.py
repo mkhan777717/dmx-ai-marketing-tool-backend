@@ -1,8 +1,9 @@
 import os
 import uuid
-import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
 from datetime import datetime, timedelta, timezone
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from app.integrations.connectors.linkedin.exceptions import LinkedInAuthError
 from app.integrations.exceptions import IntegrationError
@@ -373,8 +374,8 @@ async def test_provider_publish_with_image_success(
     account,
     content,
 ):
-    from app.models.asset import Asset
     from app.constants.enums import AssetType
+    from app.models.asset import Asset
 
     image_asset = Asset(
         asset_type=AssetType.IMAGE,
@@ -419,8 +420,8 @@ async def test_provider_publish_with_image_success(
 async def test_provider_publish_with_image_missing_url(
     mock_secret_service, provider, account, content
 ):
-    from app.models.asset import Asset
     from app.constants.enums import AssetType
+    from app.models.asset import Asset
 
     image_asset = Asset(
         asset_type=AssetType.IMAGE, public_url=None, mime_type="image/jpeg"
@@ -438,8 +439,8 @@ async def test_provider_publish_with_image_missing_url(
 async def test_provider_publish_with_unsupported_mime(
     mock_secret_service, provider, account, content
 ):
-    from app.models.asset import Asset
     from app.constants.enums import AssetType
+    from app.models.asset import Asset
 
     image_asset = Asset(
         asset_type=AssetType.IMAGE,
@@ -460,9 +461,10 @@ async def test_provider_publish_with_unsupported_mime(
 async def test_provider_publish_with_image_network_error(
     mock_client_class, mock_secret_service, provider, account, content
 ):
-    from app.models.asset import Asset
-    from app.constants.enums import AssetType
     import httpx
+
+    from app.constants.enums import AssetType
+    from app.models.asset import Asset
 
     image_asset = Asset(
         asset_type=AssetType.IMAGE,

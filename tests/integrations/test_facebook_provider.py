@@ -1,14 +1,15 @@
-import pytest
 import uuid
 from unittest.mock import AsyncMock, patch
 
-from app.services.social.facebook_provider import FacebookProvider
-from app.models.social_account import SocialAccount
-from app.models.campaign_content import CampaignContent
-from app.models.asset import Asset
+import pytest
+
 from app.constants.enums import AssetType
-from app.integrations.exceptions import IntegrationError
 from app.integrations.connectors.facebook.exceptions import FacebookPublishError
+from app.integrations.exceptions import IntegrationError
+from app.models.asset import Asset
+from app.models.campaign_content import CampaignContent
+from app.models.social_account import SocialAccount
+from app.services.social.facebook_provider import FacebookProvider
 
 
 @pytest.fixture

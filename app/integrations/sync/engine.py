@@ -5,11 +5,11 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants.enums import ApiProvider, JobPriority
+from app.integrations.exceptions import OAuthTokenError
 from app.integrations.oauth.models import ConnectionStatus
 from app.integrations.oauth.repository import integration_connection_repo
 from app.integrations.oauth.service import integration_service
 from app.integrations.secrets.service import secret_service
-from app.integrations.exceptions import OAuthTokenError
 from app.jobs.queue import queue_service
 from app.repositories.social_account import social_account_repo
 

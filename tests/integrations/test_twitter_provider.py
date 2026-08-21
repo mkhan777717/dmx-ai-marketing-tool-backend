@@ -1,10 +1,11 @@
 import uuid
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
 
 from app.integrations.connectors.twitter.exceptions import (
-    TwitterError,
     TwitterAuthError,
+    TwitterError,
 )
 from app.models.campaign_content import CampaignContent
 from app.models.social_account import SocialAccount

@@ -1,15 +1,16 @@
-import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
-from sqlalchemy.ext.asyncio import AsyncSession
-from datetime import datetime, timedelta, timezone
 import uuid
+from datetime import datetime, timedelta, timezone
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants.enums import ApiProvider
+from app.integrations.connectors.google.exceptions import GoogleAuthError, GoogleError
 from app.models.campaign_content import CampaignContent
 from app.models.social_account import SocialAccount
 from app.services.social.factory import SocialProviderFactory
 from app.services.social.google_provider import GoogleProvider
-from app.integrations.connectors.google.exceptions import GoogleAuthError, GoogleError
 
 
 @pytest.fixture

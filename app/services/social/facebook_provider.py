@@ -14,12 +14,11 @@ class FacebookProvider(BaseSocialProvider):
     async def publish_content(
         self, account: SocialAccount, content: CampaignContent
     ) -> str:
-        from app.integrations.secrets.service import secret_service
+        from app.constants.enums import AssetType
+        from app.integrations.connectors.facebook.exceptions import FacebookPublishError
         from app.integrations.connectors.facebook.publisher import FacebookPublisher
         from app.integrations.exceptions import IntegrationError
-        from app.integrations.connectors.facebook.exceptions import FacebookPublishError
-
-        from app.constants.enums import AssetType
+        from app.integrations.secrets.service import secret_service
 
         if not account.access_token:
             raise IntegrationError(

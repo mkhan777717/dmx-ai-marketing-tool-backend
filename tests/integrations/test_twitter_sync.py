@@ -1,11 +1,12 @@
 import uuid
 from datetime import datetime, timezone
-import pytest
 from unittest.mock import AsyncMock, patch
 
+import pytest
+
 from app.constants.enums import ApiProvider
-from app.integrations.sync.engine import sync_engine
 from app.integrations.oauth.models import ConnectionStatus
+from app.integrations.sync.engine import sync_engine
 
 
 @pytest.fixture

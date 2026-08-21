@@ -214,9 +214,10 @@ async def test_publisher_posts_api_failure():
 
 
 def test_missing_env_var_raises_error():
+    import os
+
     from app.integrations.connectors.linkedin.publisher import LinkedInPublisher
     from app.integrations.exceptions import IntegrationError
-    import os
 
     with patch.dict(os.environ, clear=True):
         if "LINKEDIN_API_VERSION" in os.environ:
@@ -228,9 +229,10 @@ def test_missing_env_var_raises_error():
 
 
 def test_invalid_env_var_raises_error():
+    import os
+
     from app.integrations.connectors.linkedin.publisher import LinkedInPublisher
     from app.integrations.exceptions import IntegrationError
-    import os
 
     with patch.dict(os.environ, {"LINKEDIN_API_VERSION": "latest"}):
         with pytest.raises(IntegrationError, match="must be in YYYYMM format"):
@@ -239,9 +241,10 @@ def test_invalid_env_var_raises_error():
 
 @pytest.mark.asyncio
 async def test_linkedin_sync_creates_social_account():
-    from app.integrations.sync.engine import sync_engine
-    from app.constants.enums import ApiProvider
     import uuid
+
+    from app.constants.enums import ApiProvider
+    from app.integrations.sync.engine import sync_engine
 
     mock_workspace_id = str(uuid.uuid4())
     mock_payload = {"workspace_id": mock_workspace_id, "provider": "linkedin"}
@@ -291,8 +294,9 @@ async def test_linkedin_sync_creates_social_account():
 
 @pytest.mark.asyncio
 async def test_linkedin_sync_updates_existing_social_account():
-    from app.integrations.sync.engine import sync_engine
     import uuid
+
+    from app.integrations.sync.engine import sync_engine
 
     mock_workspace_id = str(uuid.uuid4())
     mock_payload = {"workspace_id": mock_workspace_id, "provider": "linkedin"}
@@ -334,8 +338,9 @@ async def test_linkedin_sync_updates_existing_social_account():
 
 @pytest.mark.asyncio
 async def test_linkedin_sync_missing_connection_token_handled_safely():
-    from app.integrations.sync.engine import sync_engine
     import uuid
+
+    from app.integrations.sync.engine import sync_engine
 
     mock_workspace_id = str(uuid.uuid4())
     mock_payload = {"workspace_id": mock_workspace_id, "provider": "linkedin"}
@@ -366,9 +371,9 @@ async def test_linkedin_sync_missing_connection_token_handled_safely():
 
 @pytest.mark.asyncio
 async def test_linkedin_provider_publish_success():
-    from app.services.social.linkedin_provider import LinkedInProvider
-    from app.models.social_account import SocialAccount
     from app.models.campaign_content import CampaignContent
+    from app.models.social_account import SocialAccount
+    from app.services.social.linkedin_provider import LinkedInProvider
 
     provider = LinkedInProvider()
     account = SocialAccount(
@@ -400,10 +405,10 @@ async def test_linkedin_provider_publish_success():
 
 @pytest.mark.asyncio
 async def test_linkedin_provider_missing_token_raises_error():
-    from app.services.social.linkedin_provider import LinkedInProvider
-    from app.models.social_account import SocialAccount
-    from app.models.campaign_content import CampaignContent
     from app.integrations.exceptions import IntegrationError
+    from app.models.campaign_content import CampaignContent
+    from app.models.social_account import SocialAccount
+    from app.services.social.linkedin_provider import LinkedInProvider
 
     provider = LinkedInProvider()
     account = SocialAccount(account_id="urn:li:person:123", access_token=None)
@@ -417,10 +422,10 @@ async def test_linkedin_provider_missing_token_raises_error():
 
 @pytest.mark.asyncio
 async def test_linkedin_provider_empty_body_raises_error():
-    from app.services.social.linkedin_provider import LinkedInProvider
-    from app.models.social_account import SocialAccount
-    from app.models.campaign_content import CampaignContent
     from app.integrations.exceptions import IntegrationError
+    from app.models.campaign_content import CampaignContent
+    from app.models.social_account import SocialAccount
+    from app.services.social.linkedin_provider import LinkedInProvider
 
     provider = LinkedInProvider()
     account = SocialAccount(account_id="urn:li:person:123", access_token="token")
@@ -435,10 +440,10 @@ async def test_linkedin_provider_empty_body_raises_error():
 
 @pytest.mark.asyncio
 async def test_linkedin_provider_invalid_urn_raises_error():
-    from app.services.social.linkedin_provider import LinkedInProvider
-    from app.models.social_account import SocialAccount
-    from app.models.campaign_content import CampaignContent
     from app.integrations.exceptions import IntegrationError
+    from app.models.campaign_content import CampaignContent
+    from app.models.social_account import SocialAccount
+    from app.services.social.linkedin_provider import LinkedInProvider
 
     provider = LinkedInProvider()
     account = SocialAccount(account_id="123", access_token="token")

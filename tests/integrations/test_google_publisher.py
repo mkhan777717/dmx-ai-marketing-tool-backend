@@ -1,6 +1,7 @@
-import pytest
+from unittest.mock import MagicMock, patch
+
 import httpx
-from unittest.mock import patch, MagicMock
+import pytest
 
 from app.integrations.connectors.google.business_profile import (
     GoogleBusinessProfilePublisher,

@@ -1,13 +1,12 @@
-import pytest
 from unittest.mock import AsyncMock, patch
 
-from app.integrations.connectors.facebook.sync import FacebookSyncEngine
+import pytest
+
 from app.integrations.connectors.facebook.connector import FacebookConnector
 from app.integrations.connectors.facebook.exceptions import FacebookApiError
-
-from app.integrations.connectors.instagram.sync import InstagramSyncEngine
+from app.integrations.connectors.facebook.sync import FacebookSyncEngine
 from app.integrations.connectors.instagram.connector import InstagramConnector
-
+from app.integrations.connectors.instagram.sync import InstagramSyncEngine
 from app.integrations.exceptions import OAuthTokenError
 
 
