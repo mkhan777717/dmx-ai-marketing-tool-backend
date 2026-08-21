@@ -82,7 +82,6 @@ async def test_perform_sync_full_success(google_sync_engine):
         patch.object(google_sync_engine, "fetch_accounts") as mock_accounts,
         patch.object(google_sync_engine, "fetch_locations") as mock_locations,
     ):
-
         mock_profile.return_value = {"id": "123"}
         mock_accounts.return_value = [
             {"name": "accounts/111", "accountName": "Test Account 1"}
@@ -112,7 +111,6 @@ async def test_perform_sync_empty_accounts_and_locations(google_sync_engine):
         patch.object(google_sync_engine, "fetch_profile") as mock_profile,
         patch.object(google_sync_engine, "fetch_accounts") as mock_accounts,
     ):
-
         mock_profile.return_value = {"id": "123"}
         mock_accounts.return_value = []
 
@@ -155,7 +153,6 @@ async def test_perform_sync_malformed_ids(google_sync_engine):
         patch.object(google_sync_engine, "fetch_accounts") as mock_accounts,
         patch.object(google_sync_engine, "fetch_locations") as mock_locations,
     ):
-
         mock_profile.return_value = {"id": "123"}
         # missing "name" key
         mock_accounts.return_value = [{"accountName": "Test Account 1"}]

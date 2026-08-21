@@ -28,7 +28,7 @@ class CeleryAdapter(BaseQueueAdapter):
         """
 
         logger.info(
-            "[CeleryAdapter] Enqueuing task '%s' " "on queue '%s' (countdown=%s)",
+            "[CeleryAdapter] Enqueuing task '%s' on queue '%s' (countdown=%s)",
             job_name,
             queue,
             countdown,
@@ -43,8 +43,7 @@ class CeleryAdapter(BaseQueueAdapter):
             )
 
             logger.info(
-                "[CeleryAdapter] Task '%s' enqueued successfully. "
-                "Celery task ID: %s",
+                "[CeleryAdapter] Task '%s' enqueued successfully. Celery task ID: %s",
                 job_name,
                 result.id,
             )

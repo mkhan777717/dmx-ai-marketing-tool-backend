@@ -45,7 +45,6 @@ async def test_sync_engine_marks_expired_on_oauth_error():
             new_callable=AsyncMock,
         ) as mock_update,
     ):
-
         mock_get_conn.return_value = mock_conn
 
         mock_connector = AsyncMock()
@@ -96,7 +95,6 @@ async def test_sync_engine_does_not_mark_expired_on_generic_error():
             new_callable=AsyncMock,
         ) as mock_update,
     ):
-
         mock_get_conn.return_value = mock_conn
 
         mock_connector = AsyncMock()
@@ -140,7 +138,6 @@ async def test_reconnect_restores_expired_connection():
             return_value="enc_new_tok",
         ),
     ):
-
         mock_get_conn.return_value = expired_conn
 
         # Mock connector and breaker behavior for successful OAuth

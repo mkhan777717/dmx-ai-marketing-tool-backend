@@ -89,7 +89,6 @@ async def test_google_sync_creates_social_accounts(
             "app.repositories.social_account.social_account_repo.update"
         ) as mock_update,
     ):
-
         result = await SyncEngine.execute_sync_job(mock_db, payload)
 
         assert result == sync_result
@@ -163,7 +162,6 @@ async def test_google_sync_updates_existing_social_accounts(
             "app.repositories.social_account.social_account_repo.update"
         ) as mock_update,
     ):
-
         await SyncEngine.execute_sync_job(mock_db, payload)
 
         assert mock_get_all.call_count == 1
@@ -221,7 +219,6 @@ async def test_google_sync_missing_location_id_handled_safely(
             "app.repositories.social_account.social_account_repo.create"
         ) as mock_create,
     ):
-
         await SyncEngine.execute_sync_job(mock_db, payload)
 
         # Should skip creating or querying if location_id is missing

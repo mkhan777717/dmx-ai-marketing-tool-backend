@@ -76,7 +76,6 @@ async def test_publish_content_success(db_session, mock_account, text_content):
             new_callable=AsyncMock,
         ) as mock_publish,
     ):
-
         mock_publish.return_value = "accounts/111/locations/222/localPosts/789"
 
         result = await provider.publish_content(db_session, mock_account, text_content)
@@ -282,7 +281,6 @@ async def test_publish_content_refreshes_token_if_expired(
             new_callable=AsyncMock,
         ) as mock_publish,
     ):
-
         mock_refresh.return_value = mock_new_tokens
         mock_publish.return_value = "accounts/111/locations/222/localPosts/789"
 
