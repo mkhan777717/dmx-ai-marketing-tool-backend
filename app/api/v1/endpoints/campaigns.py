@@ -43,6 +43,9 @@ async def create_campaign(
     campaign = await CampaignService.create_campaign(
         db, workspace_id, current_user.id, campaign_in
     )
+
+    await db.commit()
+
     return ApiResponse(success=True, message="Campaign created", data=campaign)
 
 
@@ -123,7 +126,14 @@ async def delete_campaign(
     Soft delete a campaign.
     """
     campaign = await CampaignService.delete_campaign(db, workspace_id, campaign_id)
-    return ApiResponse(success=True, message="Campaign deleted", data=campaign)
+
+    await db.commit()
+
+    return ApiResponse(
+        success=True,
+        message="Campaign deleted",
+        data=campaign,
+    )
 
 
 @router.post(

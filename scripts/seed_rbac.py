@@ -27,6 +27,7 @@ RESOURCES = [
     "Reports",
     "Settings",
     "Social Accounts",
+    "Integration",
     "API Keys",
     "Audit Logs",
 ]

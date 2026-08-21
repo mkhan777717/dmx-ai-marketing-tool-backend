@@ -1,12 +1,31 @@
 import uuid
+from unittest.mock import MagicMock, patch
 
 import jwt
 import pytest
+from cryptography.hazmat.primitives.asymmetric import ec
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config.settings import settings
 from app.services.supabase_auth import SupabaseAuthService
+
+
+# --- ES256 key pair fixture (generated once per test module) ---
+
+_ec_private_key = ec.generate_private_key(ec.SECP256R1())
+_ec_public_key = _ec_private_key.public_key()
+
+
+def _make_mock_jwks_client(public_key):
+    """Create a mock PyJWKClient that returns the given public key."""
+    mock_signing_key = MagicMock()
+    mock_signing_key.key = public_key
+
+    mock_client_instance = MagicMock()
+    mock_client_instance.get_signing_key_from_jwt.return_value = mock_signing_key
+
+    mock_client_class = MagicMock(return_value=mock_client_instance)
+    return mock_client_class
 
 
 def test_verify_jwt_success():
@@ -15,21 +34,59 @@ def test_verify_jwt_success():
         "email": "test@supabase.com",
         "aud": "authenticated",
     }
-    token = jwt.encode(payload, settings.SUPABASE_JWT_SECRET, algorithm="HS256")
+    token = jwt.encode(
+        payload, _ec_private_key, algorithm="ES256", headers={"kid": "test-kid"}
+    )
 
-    decoded = SupabaseAuthService.verify_jwt(token)
+    mock_client_class = _make_mock_jwks_client(_ec_public_key)
+
+    with patch("app.services.supabase_auth.jwt.PyJWKClient", mock_client_class):
+        decoded = SupabaseAuthService.verify_jwt(token)
+
     assert decoded["email"] == "test@supabase.com"
+    assert decoded["sub"] == payload["sub"]
 
 
 def test_verify_jwt_expired():
-    # PyJWT raises ExpiredSignatureError if 'exp' is in the past
-    payload = {"sub": str(uuid.uuid4()), "exp": 0, "aud": "authenticated"}
-    token = jwt.encode(payload, settings.SUPABASE_JWT_SECRET, algorithm="HS256")
+    payload = {
+        "sub": str(uuid.uuid4()),
+        "exp": 0,
+        "aud": "authenticated",
+    }
+    token = jwt.encode(
+        payload, _ec_private_key, algorithm="ES256", headers={"kid": "test-kid"}
+    )
 
-    with pytest.raises(HTTPException) as exc:
-        SupabaseAuthService.verify_jwt(token)
+    mock_client_class = _make_mock_jwks_client(_ec_public_key)
+
+    with patch("app.services.supabase_auth.jwt.PyJWKClient", mock_client_class):
+        with pytest.raises(HTTPException) as exc:
+            SupabaseAuthService.verify_jwt(token)
+
     assert exc.value.status_code == 401
     assert "expired" in str(exc.value.detail).lower()
+
+
+def test_verify_jwt_jwks_failure():
+    """When JWKS endpoint is unreachable or kid is missing, should return 401 not 500."""
+    # Create any token — content doesn't matter since JWKS lookup will fail
+    payload = {"sub": str(uuid.uuid4()), "aud": "authenticated"}
+    token = jwt.encode(
+        payload, _ec_private_key, algorithm="ES256", headers={"kid": "unknown-kid"}
+    )
+
+    mock_client_instance = MagicMock()
+    mock_client_instance.get_signing_key_from_jwt.side_effect = jwt.PyJWKClientError(
+        "Unable to find a signing key that matches"
+    )
+    mock_client_class = MagicMock(return_value=mock_client_instance)
+
+    with patch("app.services.supabase_auth.jwt.PyJWKClient", mock_client_class):
+        with pytest.raises(HTTPException) as exc:
+            SupabaseAuthService.verify_jwt(token)
+
+    assert exc.value.status_code == 401
+    assert "invalid" in str(exc.value.detail).lower()
 
 
 @pytest.mark.asyncio

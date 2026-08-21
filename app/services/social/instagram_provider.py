@@ -14,8 +14,44 @@ class InstagramProvider(BaseSocialProvider):
     async def publish_content(
         self, account: SocialAccount, content: CampaignContent
     ) -> str:
-        # Implementation for Instagram Graph API goes here
-        raise NotImplementedError("Instagram publishing not yet implemented")
+        from app.constants.enums import AssetType
+        from app.integrations.connectors.instagram.exceptions import (
+            InstagramPublishError,
+        )
+        from app.integrations.connectors.instagram.publisher import InstagramPublisher
+        from app.integrations.exceptions import IntegrationError
+        from app.integrations.secrets.service import secret_service
+
+        if not account.access_token:
+            raise IntegrationError(
+                f"No access token available for social account {account.id}"
+            )
+
+        decrypted_token = secret_service.decrypt_token(account.access_token)
+
+        image_asset = next(
+            (a for a in content.assets if a.asset_type == AssetType.IMAGE), None
+        )
+        if not image_asset:
+            raise IntegrationError(
+                f"Campaign content {content.id} missing IMAGE asset required for Instagram."
+            )
+        if not image_asset.public_url:
+            raise IntegrationError(
+                f"Campaign content {content.id} image asset missing public_url."
+            )
+
+        publisher = InstagramPublisher(page_access_token=decrypted_token)
+        response = await publisher.publish_image_post(
+            ig_user_id=account.account_id,
+            image_url=image_asset.public_url,
+            caption=content.body or "",
+        )
+
+        post_id = response.get("id")
+        if not post_id:
+            raise InstagramPublishError("Meta API did not return a valid post ID.")
+        return str(post_id)
 
     async def get_account_info(self, access_token: str) -> dict[str, Any]:
         # Fetch Instagram account info

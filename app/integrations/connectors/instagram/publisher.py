@@ -3,10 +3,11 @@ from typing import Any, Dict
 import httpx
 
 from app.integrations.connectors.instagram.exceptions import InstagramPublishError
+from app.integrations.constants import META_GRAPH_API_VERSION
 
 
 class InstagramPublisher:
-    GRAPH_API_VERSION = "v18.0"
+    GRAPH_API_VERSION = META_GRAPH_API_VERSION
     BASE_URL = f"https://graph.facebook.com/{GRAPH_API_VERSION}"
 
     def __init__(self, page_access_token: str):

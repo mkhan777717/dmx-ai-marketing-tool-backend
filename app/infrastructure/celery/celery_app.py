@@ -48,3 +48,8 @@ celery_app.conf.beat_schedule = {
     #     "schedule": 86400.0, # 24 hours
     # },
 }
+# Explicitly import Celery task modules
+celery_app.conf.imports = (
+    "app.infrastructure.celery.health",
+    "app.infrastructure.celery.tasks.integration",
+)

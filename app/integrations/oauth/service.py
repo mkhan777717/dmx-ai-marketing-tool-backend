@@ -1,5 +1,6 @@
 import logging
 import uuid
+from datetime import timezone
 from typing import Any
 
 from fastapi import HTTPException, status
@@ -35,7 +36,11 @@ class IntegrationService:
 
     @staticmethod
     async def connect_provider(
-        db: AsyncSession, workspace_id: uuid.UUID, provider: str, auth_code: str
+        db: AsyncSession,
+        workspace_id: uuid.UUID,
+        provider: str,
+        auth_code: str,
+        code_verifier: str | None = None,
     ) -> IntegrationConnection:
         provider = provider.lower()
         credentials = secret_service.get_provider_credentials(provider)
@@ -50,12 +55,19 @@ class IntegrationService:
             # Connect and exchange tokens via circuit breaker and retry policy
             @retry_policy(max_retries=2)
             async def _connect():
-                return await breaker.call(connector.connect, auth_code)
+                return await breaker.call(
+                    connector.connect, auth_code, code_verifier=code_verifier
+                )
 
             metadata = await _connect()
             access_token = metadata.pop("access_token", None)
             refresh_token = metadata.pop("refresh_token", None)
             expires_at = metadata.pop("expires_at", None)
+
+            # DB column is TIMESTAMP WITHOUT TIME ZONE.
+            # Store UTC as a naive datetime.
+            if expires_at is not None and expires_at.tzinfo is not None:
+                expires_at = expires_at.astimezone(timezone.utc).replace(tzinfo=None)
 
             # Encrypt tokens
             enc_access = (

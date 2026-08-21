@@ -8,6 +8,7 @@ from app.integrations.connectors.linkedin import LinkedInConnector
 # Import available connectors to ensure they can be registered
 from app.integrations.connectors.mock import MockConnector
 from app.integrations.connectors.slack import SlackConnector
+from app.integrations.connectors.twitter import TwitterConnector
 from app.integrations.interfaces import BaseConnector
 
 
@@ -49,3 +50,4 @@ ConnectorRegistry.register("facebook", FacebookConnector)
 ConnectorRegistry.register("instagram", InstagramConnector)
 ConnectorRegistry.register("google", GoogleConnector)
 ConnectorRegistry.register("slack", SlackConnector)
+ConnectorRegistry.register("twitter", TwitterConnector)

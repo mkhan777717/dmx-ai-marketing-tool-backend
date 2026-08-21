@@ -97,6 +97,7 @@ class ApiProvider(str, Enum):
     STRIPE = "STRIPE"
     MOCK = "MOCK"
     INSTAGRAM = "INSTAGRAM"
+    TWITTER = "TWITTER"
 
 
 class RoleType(str, Enum):

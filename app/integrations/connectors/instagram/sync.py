@@ -4,10 +4,12 @@ import httpx
 
 from app.integrations.connectors.instagram.exceptions import InstagramApiError
 from app.integrations.connectors.instagram.schemas import FacebookPagesResponse
+from app.integrations.constants import META_GRAPH_API_VERSION
+from app.integrations.exceptions import OAuthTokenError
 
 
 class InstagramSyncEngine:
-    GRAPH_API_VERSION = "v18.0"
+    GRAPH_API_VERSION = META_GRAPH_API_VERSION
     BASE_URL = f"https://graph.facebook.com/{GRAPH_API_VERSION}"
 
     def __init__(self, access_token: str):
@@ -26,8 +28,21 @@ class InstagramSyncEngine:
             response = await client.get(url, params=params)
 
             if response.status_code != 200:
+                try:
+                    err_data = response.json()
+                    err_type = err_data.get("error", {}).get("type")
+                    if (
+                        response.status_code in (400, 401)
+                        and err_type == "OAuthException"
+                    ):
+                        raise OAuthTokenError(
+                            "Instagram/Facebook access token is invalid or expired."
+                        )
+                except ValueError:
+                    pass
+
                 raise InstagramApiError(
-                    f"Failed to fetch pages: {response.text}",
+                    f"Failed to fetch pages (Status: {response.status_code})",
                     status_code=response.status_code,
                 )
 
@@ -50,8 +65,21 @@ class InstagramSyncEngine:
             response = await client.get(url, params=params)
 
             if response.status_code != 200:
+                try:
+                    err_data = response.json()
+                    err_type = err_data.get("error", {}).get("type")
+                    if (
+                        response.status_code in (400, 401)
+                        and err_type == "OAuthException"
+                    ):
+                        raise OAuthTokenError(
+                            "Instagram/Facebook access token is invalid or expired."
+                        )
+                except ValueError:
+                    pass
+
                 raise InstagramApiError(
-                    f"Failed to fetch IG profile: {response.text}",
+                    f"Failed to fetch IG profile (Status: {response.status_code})",
                     status_code=response.status_code,
                 )
 

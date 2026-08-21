@@ -14,22 +14,35 @@ class SupabaseAuthService:
     @staticmethod
     def verify_jwt(token: str) -> dict[str, Any]:
         """
-        Verifies the Supabase JWT using the Supabase JWT secret.
-        Raises HTTPException if invalid.
+        Verify Supabase JWT using the project's JWKS endpoint.
+        Supports Supabase's current ES256 signing keys.
         """
         try:
-            # Supabase signs JWTs using the project JWT secret
+            jwks_client = jwt.PyJWKClient(
+                f"{settings.SUPABASE_URL}/auth/v1/.well-known/jwks.json"
+            )
+
+            signing_key = jwks_client.get_signing_key_from_jwt(token)
+
             payload = jwt.decode(
                 token,
-                settings.SUPABASE_JWT_SECRET,
-                algorithms=["HS256"],
+                signing_key.key,
+                algorithms=["ES256"],
                 audience="authenticated",
             )
+
             return payload
+
         except jwt.ExpiredSignatureError:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token has expired",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        except jwt.PyJWKClientError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication token",
                 headers={"WWW-Authenticate": "Bearer"},
             )
         except jwt.InvalidTokenError:

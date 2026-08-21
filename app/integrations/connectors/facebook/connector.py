@@ -24,7 +24,9 @@ class FacebookConnector(AbstractConnector):
         # Webhook handler needs the App Secret to verify HMAC payload signatures
         self.webhook_handler = FacebookWebhookHandler(self.client_secret)
 
-    async def connect(self, auth_code: str) -> dict[str, Any]:
+    async def connect(
+        self, auth_code: str, code_verifier: str | None = None
+    ) -> dict[str, Any]:
         """Exchanges authorization code for tokens and fetches initial metadata."""
         # This exchanges for a short-lived token, then upgrades to a long-lived token
         token_data = await self.oauth_handler.exchange_code(auth_code)

@@ -128,7 +128,20 @@ class CampaignService:
         db: AsyncSession, workspace_id: uuid.UUID, campaign_id: uuid.UUID
     ) -> Campaign:
         campaign = await CampaignService.get_campaign(db, workspace_id, campaign_id)
-        return await campaign_repo.remove(db, id=campaign.id)
+
+        deleted = await campaign_repo.delete(
+            db,
+            id=campaign.id,
+            soft=True,
+        )
+
+        if not deleted:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Campaign not found",
+            )
+
+        return campaign
 
     @staticmethod
     async def change_status(
