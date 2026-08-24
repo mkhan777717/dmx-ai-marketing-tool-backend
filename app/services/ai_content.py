@@ -4,7 +4,6 @@ from typing import Sequence
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app import db
 from app.constants.enums import ContentStatus
 from app.models.campaign_content import CampaignContent
 from app.repositories.campaign import campaign_repo
