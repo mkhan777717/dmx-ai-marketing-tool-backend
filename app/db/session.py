@@ -5,9 +5,9 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
 
 from app.config.settings import settings
-from sqlalchemy.pool import NullPool
 
 engine = None
 SessionLocal = None
