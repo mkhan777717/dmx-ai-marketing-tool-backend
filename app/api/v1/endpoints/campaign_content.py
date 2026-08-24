@@ -41,7 +41,11 @@ async def generate_ai_content(
     Does not save to DB automatically.
     """
     response = await AIContentService.generate_content(workspace_id, request)
-    return ApiResponse(success=True, message="AI content generated", data=response)
+    return ApiResponse(
+        success=True,
+        message="AI content generated",
+        data=response,
+    )
 
 
 @router.post(
@@ -60,12 +64,30 @@ async def create_campaign_content(
     """
     Save generated or manual content to a campaign.
     """
-    # Force the campaign_id from the path
+    # Always trust the campaign_id from the URL.
     content_in.campaign_id = campaign_id
-    content = await AIContentService.create_campaign_content(
-        db, workspace_id, content_in
+
+    try:
+        content = await AIContentService.create_campaign_content(
+            db,
+            workspace_id,
+            content_in,
+        )
+
+        await db.commit()
+
+        # Refresh after commit so the response reflects persisted DB state.
+        await db.refresh(content)
+
+    except Exception:
+        await db.rollback()
+        raise
+
+    return ApiResponse(
+        success=True,
+        message="Campaign content created",
+        data=content,
     )
-    return ApiResponse(success=True, message="Campaign content created", data=content)
 
 
 @router.get(
@@ -86,10 +108,17 @@ async def list_campaign_contents(
     List all content for a specific campaign.
     """
     contents = await AIContentService.get_campaign_contents(
-        db, workspace_id, campaign_id, skip, limit
+        db,
+        workspace_id,
+        campaign_id,
+        skip,
+        limit,
     )
+
     return ApiResponse(
-        success=True, message="Campaign contents retrieved", data=contents
+        success=True,
+        message="Campaign contents retrieved",
+        data=contents,
     )
 
 
@@ -106,10 +135,21 @@ async def get_campaign_content(
     db: AsyncSession = Depends(get_db_session),
     _=Depends(get_current_workspace),
 ):
+    """
+    Get a specific campaign content.
+    """
     content = await AIContentService.get_content(
-        db, workspace_id, campaign_id, content_id
+        db,
+        workspace_id,
+        campaign_id,
+        content_id,
     )
-    return ApiResponse(success=True, message="Content retrieved", data=content)
+
+    return ApiResponse(
+        success=True,
+        message="Content retrieved",
+        data=content,
+    )
 
 
 @router.patch(
@@ -126,10 +166,32 @@ async def update_campaign_content(
     db: AsyncSession = Depends(get_db_session),
     _=Depends(get_current_workspace),
 ):
-    content = await AIContentService.update_content(
-        db, workspace_id, campaign_id, content_id, content_in
+    """
+    Update existing campaign content.
+    """
+    try:
+        content = await AIContentService.update_content(
+            db,
+            workspace_id,
+            campaign_id,
+            content_id,
+            content_in,
+        )
+
+        await db.commit()
+
+        # Make sure the returned object reflects the committed state.
+        await db.refresh(content)
+
+    except Exception:
+        await db.rollback()
+        raise
+
+    return ApiResponse(
+        success=True,
+        message="Content updated",
+        data=content,
     )
-    return ApiResponse(success=True, message="Content updated", data=content)
 
 
 @router.delete(
@@ -145,7 +207,28 @@ async def delete_campaign_content(
     db: AsyncSession = Depends(get_db_session),
     _=Depends(get_current_workspace),
 ):
-    content = await AIContentService.delete_content(
-        db, workspace_id, campaign_id, content_id
+    """
+    Delete campaign content.
+    """
+    try:
+        content = await AIContentService.delete_content(
+            db,
+            workspace_id,
+            campaign_id,
+            content_id,
+        )
+
+        await db.commit()
+
+        if content is not None:
+            await db.refresh(content)
+
+    except Exception:
+        await db.rollback()
+        raise
+
+    return ApiResponse(
+        success=True,
+        message="Content deleted",
+        data=content,
     )
-    return ApiResponse(success=True, message="Content deleted", data=content)

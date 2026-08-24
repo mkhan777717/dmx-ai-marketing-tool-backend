@@ -4,6 +4,7 @@ from typing import Sequence
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app import db
 from app.constants.enums import ContentStatus
 from app.models.campaign_content import CampaignContent
 from app.repositories.campaign import campaign_repo
@@ -134,7 +135,23 @@ class AIContentService:
         campaign_id: uuid.UUID,
         content_id: uuid.UUID,
     ) -> CampaignContent:
-        content = await AIContentService.get_content(
-            db, workspace_id, campaign_id, content_id
+       content = await AIContentService.get_content(
+            db,
+            workspace_id,
+            campaign_id,
+            content_id,
         )
-        return await campaign_content_repo.remove(db, id=content.id)
+
+       deleted = await campaign_content_repo.delete(
+            db,
+            id=content.id,
+            soft=True,
+        )
+
+       if not deleted:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Content not found",
+        )
+
+       return content

@@ -134,7 +134,7 @@ def test_facebook_oauth_url():
     assert "client_id=fb_client_123" in url
     assert "pages_show_list" in url
     assert "pages_manage_posts" in url
-    assert "publish_video" in url
+    assert "publish_video" not in url
     assert f"state={state}" in url
 
     # Cleanup

@@ -93,9 +93,7 @@ class OAuthManager:
             return f"https://accounts.google.com/o/oauth2/v2/auth?{query}"
 
         if provider == "facebook":
-            scopes = (
-                "pages_show_list,pages_read_engagement,pages_manage_posts,publish_video"
-            )
+            scopes = "pages_show_list,pages_read_engagement,pages_manage_posts"
 
             params = {
                 "client_id": client_id,

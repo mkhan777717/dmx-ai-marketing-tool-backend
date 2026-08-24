@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.orm import sessionmaker
 
 from app.config.settings import settings
+from sqlalchemy.pool import NullPool
 
 engine = None
 SessionLocal = None
@@ -42,8 +43,10 @@ if settings.DATABASE_URL:
         async_url,
         echo=settings.DEBUG,
         future=True,
-        pool_pre_ping=True,
-        connect_args={"statement_cache_size": 0},
+        poolclass=NullPool,
+        connect_args={
+            "statement_cache_size": 0,
+        },
     )
 
     AsyncSessionLocal = async_sessionmaker(
