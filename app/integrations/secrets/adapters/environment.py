@@ -2,7 +2,10 @@ import logging
 import os
 from typing import Protocol
 
+from dotenv import load_dotenv
+
 logger = logging.getLogger(__name__)
+load_dotenv()
 
 
 class SecretAdapter(Protocol):

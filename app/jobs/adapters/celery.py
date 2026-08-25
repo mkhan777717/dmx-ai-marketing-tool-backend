@@ -1,7 +1,7 @@
 import logging
-import uuid
 from typing import Any
 
+from app.infrastructure.celery.celery_app import celery_app
 from app.jobs.interfaces import BaseQueueAdapter
 
 logger = logging.getLogger(__name__)
@@ -9,10 +9,8 @@ logger = logging.getLogger(__name__)
 
 class CeleryAdapter(BaseQueueAdapter):
     """
-    Adapter that interfaces with Celery.
-    In a real deployment, this would use `celery_app.send_task(...)`.
-    For this mocked validation phase, it safely simulates dispatch to
-    avoid hard-crashing if Redis isn't running on the local machine.
+    Real Celery adapter responsible for dispatching background jobs
+    to the configured Celery broker.
     """
 
     async def enqueue(
@@ -22,17 +20,64 @@ class CeleryAdapter(BaseQueueAdapter):
         queue: str = "default",
         countdown: int = 0,
     ) -> str:
-        logger.info(
-            f"[CeleryAdapter] Mocking enqueue for {job_name} on queue '{queue}' (countdown={countdown})"
-        )
-        # In production:
-        # result = celery_app.send_task(job_name, kwargs=payload, queue=queue, countdown=countdown)
-        # return result.id
+        """
+        Enqueue a task into Celery.
 
-        return f"celery-task-{uuid.uuid4()}"
+        The job_name must match a registered Celery task name,
+        e.g. "integration.sync".
+        """
+
+        logger.info(
+            "[CeleryAdapter] Enqueuing task '%s' on queue '%s' (countdown=%s)",
+            job_name,
+            queue,
+            countdown,
+        )
+
+        try:
+            result = celery_app.send_task(
+                job_name,
+                kwargs=payload,
+                queue=queue,
+                countdown=countdown,
+            )
+
+            logger.info(
+                "[CeleryAdapter] Task '%s' enqueued successfully. Celery task ID: %s",
+                job_name,
+                result.id,
+            )
+
+            return result.id
+
+        except Exception:
+            logger.exception(
+                "[CeleryAdapter] Failed to enqueue task '%s'",
+                job_name,
+            )
+            raise
 
     async def revoke(self, broker_task_id: str) -> bool:
-        logger.info(f"[CeleryAdapter] Mocking revoke for task {broker_task_id}")
-        # In production:
-        # celery_app.control.revoke(broker_task_id, terminate=True)
-        return True
+        """
+        Revoke a Celery task by its broker task ID.
+        """
+
+        logger.info(
+            "[CeleryAdapter] Revoking Celery task: %s",
+            broker_task_id,
+        )
+
+        try:
+            celery_app.control.revoke(
+                broker_task_id,
+                terminate=True,
+            )
+
+            return True
+
+        except Exception:
+            logger.exception(
+                "[CeleryAdapter] Failed to revoke task: %s",
+                broker_task_id,
+            )
+            return False

@@ -1,4 +1,3 @@
-from app.integrations.oauth.models import IntegrationConnection
 from app.jobs.models import JobExecution
 from app.models.ai_usage import AIUsage
 from app.models.analytics_snapshot import AnalyticsSnapshot

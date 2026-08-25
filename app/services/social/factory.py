@@ -21,6 +21,14 @@ class SocialProviderFactory:
             return InstagramProvider()
         elif provider_type == ApiProvider.LINKEDIN:
             return LinkedInProvider()
+        elif provider_type == ApiProvider.GOOGLE:
+            from app.services.social.google_provider import GoogleProvider
+
+            return GoogleProvider()
+        elif provider_type == ApiProvider.TWITTER:
+            from app.services.social.twitter_provider import TwitterProvider
+
+            return TwitterProvider()
         else:
             # Fallback for unconnected or unimplemented
             return MockSocialProvider()

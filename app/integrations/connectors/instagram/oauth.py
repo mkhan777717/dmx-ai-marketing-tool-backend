@@ -5,11 +5,12 @@ import httpx
 
 from app.integrations.connectors.instagram.exceptions import InstagramAuthError
 from app.integrations.connectors.instagram.schemas import InstagramTokenResponse
+from app.integrations.constants import META_GRAPH_API_VERSION
 
 
 class InstagramOAuthHandler:
     # Instagram Graph API uses the Facebook Graph API endpoints for OAuth
-    GRAPH_API_VERSION = "v18.0"
+    GRAPH_API_VERSION = META_GRAPH_API_VERSION
     OAUTH_URL = f"https://graph.facebook.com/{GRAPH_API_VERSION}/oauth/access_token"
 
     def __init__(self, client_id: str, client_secret: str):

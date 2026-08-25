@@ -19,7 +19,7 @@ router = APIRouter()
     "/{workspace_id}/social-accounts/connect",
     response_model=SocialAccountResponse,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_permission("social accounts", "manage"))],
+    dependencies=[Depends(require_permission("social_accounts", "manage"))],
 )
 async def connect_social_account(
     workspace_id: uuid.UUID,
@@ -30,14 +30,16 @@ async def connect_social_account(
     """
     Connect a new social account via OAuth.
     """
-    return await SocialAccountService.connect_account(db, workspace_id, request)
+    account = await SocialAccountService.connect_account(db, workspace_id, request)
+    await db.commit()
+    return account
 
 
 @router.get(
     "/{workspace_id}/social-accounts",
     response_model=Sequence[SocialAccountResponse],
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(require_permission("social accounts", "read"))],
+    dependencies=[Depends(require_permission("social_accounts", "read"))],
 )
 async def list_social_accounts(
     workspace_id: uuid.UUID,

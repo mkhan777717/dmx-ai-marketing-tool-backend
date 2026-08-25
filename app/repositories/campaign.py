@@ -15,7 +15,10 @@ class CampaignRepository(BaseRepository[Campaign]):
     ) -> Sequence[Campaign]:
         stmt = (
             select(self.model)
-            .where(self.model.workspace_id == workspace_id)
+            .where(
+                self.model.workspace_id == workspace_id,
+                self.model.deleted_at.is_(None),
+            )
             .offset(skip)
             .limit(limit)
             .order_by(self.model.created_at.desc())
@@ -33,7 +36,11 @@ class CampaignRepository(BaseRepository[Campaign]):
     ) -> Sequence[Campaign]:
         stmt = (
             select(self.model)
-            .where(self.model.workspace_id == workspace_id, self.model.status == status)
+            .where(
+                self.model.workspace_id == workspace_id,
+                self.model.status == status,
+                self.model.deleted_at.is_(None),
+            )
             .offset(skip)
             .limit(limit)
             .order_by(self.model.created_at.desc())
@@ -54,6 +61,7 @@ class CampaignRepository(BaseRepository[Campaign]):
             select(self.model)
             .where(
                 self.model.workspace_id == workspace_id,
+                self.model.deleted_at.is_(None),
                 or_(
                     self.model.campaign_name.ilike(search_pattern),
                     self.model.description.ilike(search_pattern),

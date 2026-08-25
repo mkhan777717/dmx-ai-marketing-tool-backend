@@ -74,9 +74,12 @@ async def oauth_callback(
 
     workspace_id = uuid.UUID(state_data["workspace_id"])
     provider = state_data["provider"]
+    code_verifier = state_data.get("code_verifier")
 
     # We exchange the code inside connect_provider using the connector
-    await integration_service.connect_provider(db, workspace_id, provider, code)
+    await integration_service.connect_provider(
+        db, workspace_id, provider, code, code_verifier=code_verifier
+    )
     await db.commit()
 
     return ApiResponse(success=True, message=f"Successfully connected to {provider}")

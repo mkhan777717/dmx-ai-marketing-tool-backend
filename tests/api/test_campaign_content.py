@@ -1,5 +1,5 @@
 import uuid
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from httpx import AsyncClient
@@ -79,9 +79,15 @@ async def test_generate_ai_content(
 async def test_create_campaign_content(
     async_client: AsyncClient, override_auth_deps, mock_workspace_id, mock_campaign_id
 ):
-    with patch(
-        "app.api.v1.endpoints.campaign_content.AIContentService.create_campaign_content"
-    ) as mock_create:
+    with (
+        patch(
+            "app.api.v1.endpoints.campaign_content.AIContentService.create_campaign_content"
+        ) as mock_create,
+        patch(
+            "sqlalchemy.ext.asyncio.AsyncSession.refresh",
+            new_callable=AsyncMock,
+        ),
+    ):
         from datetime import datetime, timezone
 
         from app.constants.enums import ContentStatus, ContentType

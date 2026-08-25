@@ -23,7 +23,9 @@ class SlackConnector(AbstractConnector):
         self.oauth_handler = SlackOAuthHandler(self.client_id, self.client_secret)
         self.webhook_handler = SlackWebhookHandler(self.signing_secret)
 
-    async def connect(self, auth_code: str) -> dict[str, Any]:
+    async def connect(
+        self, auth_code: str, code_verifier: str | None = None
+    ) -> dict[str, Any]:
         """Exchanges authorization code for bot tokens and fetches initial metadata."""
         token_data = await self.oauth_handler.exchange_code(auth_code)
 

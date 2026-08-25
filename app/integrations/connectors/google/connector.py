@@ -3,7 +3,7 @@ from typing import Any
 from app.integrations.base import AbstractConnector
 from app.integrations.connectors.google.analytics import GoogleAnalyticsService
 from app.integrations.connectors.google.business_profile import (
-    GoogleBusinessProfileService,
+    GoogleBusinessProfilePublisher,
 )
 from app.integrations.connectors.google.calendar import GoogleCalendarService
 from app.integrations.connectors.google.drive import GoogleDriveService
@@ -13,7 +13,7 @@ from app.integrations.connectors.google.gmail import GmailService
 from app.integrations.connectors.google.oauth import GoogleOAuthHandler
 from app.integrations.connectors.google.sync import GoogleSyncEngine
 from app.integrations.connectors.google.webhook import GoogleWebhookHandler
-from app.integrations.connectors.google.youtube import YouTubeService
+from app.integrations.connectors.google.youtube import YouTubePublisher
 from app.integrations.interfaces import IntegrationCapabilities
 
 
@@ -113,15 +113,15 @@ class GoogleConnector(AbstractConnector):
             raise ValueError("Access token required.")
         return GoogleCalendarService(self.access_token)
 
-    def get_youtube_service(self) -> YouTubeService:
+    def get_youtube_service(self) -> YouTubePublisher:
         if not self.access_token:
             raise ValueError("Access token required.")
-        return YouTubeService(self.access_token)
+        return YouTubePublisher(self.access_token)
 
-    def get_business_profile_service(self) -> GoogleBusinessProfileService:
+    def get_business_profile_service(self) -> GoogleBusinessProfilePublisher:
         if not self.access_token:
             raise ValueError("Access token required.")
-        return GoogleBusinessProfileService(self.access_token)
+        return GoogleBusinessProfilePublisher(self.access_token)
 
     def get_analytics_service(self) -> GoogleAnalyticsService:
         if not self.access_token:

@@ -33,3 +33,4 @@ cache/
 uploads/
 local storage
 generated files
+.vercel

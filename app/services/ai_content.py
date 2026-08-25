@@ -135,6 +135,22 @@ class AIContentService:
         content_id: uuid.UUID,
     ) -> CampaignContent:
         content = await AIContentService.get_content(
-            db, workspace_id, campaign_id, content_id
+            db,
+            workspace_id,
+            campaign_id,
+            content_id,
         )
-        return await campaign_content_repo.remove(db, id=content.id)
+
+        deleted = await campaign_content_repo.delete(
+            db,
+            id=content.id,
+            soft=True,
+        )
+
+        if not deleted:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Content not found",
+            )
+
+        return content

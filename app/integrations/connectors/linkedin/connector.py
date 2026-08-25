@@ -25,7 +25,9 @@ class LinkedInConnector(AbstractConnector):
         # or if the access token is already provided
         self.webhook_handler = LinkedInWebhookHandler(self.client_secret)
 
-    async def connect(self, auth_code: str) -> dict[str, Any]:
+    async def connect(
+        self, auth_code: str, code_verifier: str | None = None
+    ) -> dict[str, Any]:
         """Exchanges authorization code for tokens and fetches initial metadata."""
         token_data = await self.oauth_handler.exchange_code(auth_code)
 
@@ -33,11 +35,21 @@ class LinkedInConnector(AbstractConnector):
         sync_engine = LinkedInSyncEngine(token_data["access_token"])
         profile_data = await sync_engine.fetch_profile()
 
+        sub = profile_data.get("sub")
+        if not sub:
+            from app.integrations.connectors.linkedin.exceptions import (
+                LinkedInAuthError,
+            )
+
+            raise LinkedInAuthError(
+                "LinkedIn profile response is missing the required 'sub' identifier."
+            )
+
         return {
             "access_token": token_data["access_token"],
             "refresh_token": token_data["refresh_token"],
             "expires_at": token_data["expires_at"],
-            "author_urn": f"urn:li:person:{profile_data.get('id')}",
+            "author_urn": f"urn:li:person:{sub}",
             "profile_name": f"{profile_data.get('localizedFirstName', '')} {profile_data.get('localizedLastName', '')}".strip(),
         }
 

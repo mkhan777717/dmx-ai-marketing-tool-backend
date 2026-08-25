@@ -7,7 +7,9 @@ from app.integrations.interfaces import IntegrationCapabilities
 
 
 class MockConnector(AbstractConnector):
-    async def connect(self, auth_code: str) -> dict[str, Any]:
+    async def connect(
+        self, auth_code: str, code_verifier: str | None = None
+    ) -> dict[str, Any]:
         """Mock exchanging auth_code for tokens."""
         if auth_code == "invalid_code":
             raise ValueError("Invalid auth code")

@@ -14,7 +14,9 @@ class BaseConnector(Protocol):
     Standard interface that every external provider connector must implement.
     """
 
-    async def connect(self, auth_code: str) -> dict[str, Any]:
+    async def connect(
+        self, auth_code: str, code_verifier: str | None = None
+    ) -> dict[str, Any]:
         """Exchange auth code for tokens and connection metadata."""
         ...
 

@@ -14,7 +14,9 @@ class AbstractConnector(ABC, BaseConnector):
         self.access_token = access_token
 
     @abstractmethod
-    async def connect(self, auth_code: str) -> dict[str, Any]:
+    async def connect(
+        self, auth_code: str, code_verifier: str | None = None
+    ) -> dict[str, Any]:
         pass
 
     @abstractmethod
