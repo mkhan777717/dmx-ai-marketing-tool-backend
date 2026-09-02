@@ -31,9 +31,16 @@ class GoogleConnector(AbstractConnector):
         self.oauth_handler = GoogleOAuthHandler(self.client_id, self.client_secret)
         self.webhook_handler = GoogleWebhookHandler(self.client_secret)
 
-    async def connect(self, auth_code: str) -> dict[str, Any]:
+    async def connect(
+        self,
+        auth_code: str,
+        code_verifier: str | None = None,
+        redirect_uri: str | None = None,
+    ) -> dict[str, Any]:
         """Exchanges authorization code for tokens and fetches initial metadata."""
-        token_data = await self.oauth_handler.exchange_code(auth_code)
+        token_data = await self.oauth_handler.exchange_code(
+            auth_code, redirect_uri=redirect_uri
+        )
 
         sync_engine = GoogleSyncEngine(token_data["access_token"])
         profile_data = await sync_engine.fetch_profile()

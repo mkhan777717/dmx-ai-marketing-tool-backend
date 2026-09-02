@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     FACEBOOK_CLIENT_ID: str | None = None
     FACEBOOK_CLIENT_SECRET: str | None = None
     FACEBOOK_REDIRECT_URI: str | None = None
+    FACEBOOK_CONFIG_ID: str | None = None
 
     # Redis & Celery
     REDIS_URL: str = "redis://localhost:6379/0"

@@ -41,7 +41,10 @@ class IntegrationService:
         provider: str,
         auth_code: str,
         code_verifier: str | None = None,
+        redirect_uri: str | None = None,
     ) -> IntegrationConnection:
+        import hashlib
+
         provider = provider.lower()
         credentials = secret_service.get_provider_credentials(provider)
 
@@ -51,15 +54,26 @@ class IntegrationService:
         # Retrieve circuit breaker
         breaker = get_circuit_breaker(provider)
 
-        try:
-            # Connect and exchange tokens via circuit breaker and retry policy
-            @retry_policy(max_retries=2)
-            async def _connect():
-                return await breaker.call(
-                    connector.connect, auth_code, code_verifier=code_verifier
-                )
+        code_fp = (
+            hashlib.sha256(auth_code.encode()).hexdigest()[:10] if auth_code else "none"
+        )
+        logger.info(
+            f"[IntegrationService] Exchanging single-use auth_code: provider={provider}, workspace_id={workspace_id}, code_fp={code_fp}, redirect_uri={redirect_uri}"
+        )
 
-            metadata = await _connect()
+        try:
+            # OAuth authorization codes are single-use tokens by definition (RFC 6749 Section 4.1.2).
+            # Execute code exchange through circuit breaker without retrying single-use codes,
+            # ensuring one authorization code is exchanged exactly once.
+            connect_kwargs: dict[str, Any] = {}
+            if code_verifier:
+                connect_kwargs["code_verifier"] = code_verifier
+            if redirect_uri:
+                connect_kwargs["redirect_uri"] = redirect_uri
+
+            metadata = await breaker.call(
+                connector.connect, auth_code, **connect_kwargs
+            )
             access_token = metadata.pop("access_token", None)
             refresh_token = metadata.pop("refresh_token", None)
             expires_at = metadata.pop("expires_at", None)
@@ -82,7 +96,7 @@ class IntegrationService:
                 db, workspace_id, provider
             )
             if existing:
-                updated = await integration_connection_repo.update(
+                conn_result = await integration_connection_repo.update(
                     db,
                     db_obj=existing,
                     obj_in={
@@ -93,9 +107,8 @@ class IntegrationService:
                         "metadata_info": metadata,
                     },
                 )
-                return updated
             else:
-                new_conn = await integration_connection_repo.create(
+                conn_result = await integration_connection_repo.create(
                     db,
                     obj_in={
                         "workspace_id": workspace_id,
@@ -107,7 +120,50 @@ class IntegrationService:
                         "metadata_info": metadata,
                     },
                 )
-                return new_conn
+
+            # Instantly persist SocialAccount for single-account providers like LinkedIn
+            if provider == "linkedin" and metadata and metadata.get("author_urn"):
+                author_urn = metadata["author_urn"]
+                profile_name = metadata.get("profile_name") or "LinkedIn Member"
+                from app.constants.enums import ApiProvider
+                from app.repositories.social_account import social_account_repo
+
+                existing_accs = await social_account_repo.get_all(
+                    db,
+                    filters={
+                        "workspace_id": workspace_id,
+                        "provider": ApiProvider.LINKEDIN,
+                        "account_id": author_urn,
+                    },
+                )
+                if existing_accs:
+                    await social_account_repo.update(
+                        db,
+                        db_obj=existing_accs[0],
+                        obj_in={
+                            "name": profile_name,
+                            "access_token": enc_access,
+                            "refresh_token": enc_refresh,
+                            "expires_at": expires_at,
+                            "is_active": True,
+                        },
+                    )
+                else:
+                    await social_account_repo.create(
+                        db,
+                        obj_in={
+                            "workspace_id": workspace_id,
+                            "provider": ApiProvider.LINKEDIN,
+                            "account_id": author_urn,
+                            "name": profile_name,
+                            "access_token": enc_access,
+                            "refresh_token": enc_refresh,
+                            "expires_at": expires_at,
+                            "is_active": True,
+                        },
+                    )
+
+            return conn_result
 
         except IntegrationError as e:
             logger.error(f"Integration error connecting to {provider}: {str(e)}")

@@ -33,7 +33,9 @@ class OAuthManager:
         return base64.urlsafe_b64encode(digest).decode("utf-8").rstrip("=")
 
     @staticmethod
-    def generate_state(workspace_id: str, provider: str) -> str:
+    def generate_state(
+        workspace_id: str, provider: str, redirect_uri: str | None = None
+    ) -> str:
         state = secrets.token_urlsafe(32)
         provider_lower = provider.lower()
 
@@ -41,6 +43,7 @@ class OAuthManager:
             "workspace_id": str(workspace_id),
             "provider": provider,
             "code_verifier": None,
+            "redirect_uri": redirect_uri,
         }
 
         if provider_lower in OAuthManager._PKCE_PROVIDERS:
@@ -55,7 +58,11 @@ class OAuthManager:
 
     @staticmethod
     def get_authorization_url(
-        provider: str, state: str, redirect_uri: str, client_id: str
+        provider: str,
+        state: str,
+        redirect_uri: str,
+        client_id: str,
+        config_id: str | None = None,
     ) -> str:
         provider = provider.lower()
 
@@ -101,19 +108,53 @@ class OAuthManager:
                 "state": state,
                 "scope": scopes,
             }
+            if config_id:
+                params["config_id"] = config_id
+
             query = urllib.parse.urlencode(params)
             return f"https://www.facebook.com/{META_GRAPH_API_VERSION}/dialog/oauth?{query}"
 
         if provider == "instagram":
-            scopes = "instagram_basic,instagram_content_publish,pages_show_list,pages_read_engagement"
+            scopes = "instagram_basic,instagram_content_publish,pages_show_list,pages_read_engagement,business_management"
             params = {
                 "client_id": client_id,
                 "redirect_uri": redirect_uri,
                 "state": state,
                 "scope": scopes,
             }
+            if config_id:
+                params["config_id"] = config_id
             query = urllib.parse.urlencode(params)
             return f"https://www.facebook.com/{META_GRAPH_API_VERSION}/dialog/oauth?{query}"
+
+        if provider == "whatsapp":
+            scopes = "whatsapp_business_management,whatsapp_business_messaging"
+            params = {
+                "client_id": client_id,
+                "redirect_uri": redirect_uri,
+                "state": state,
+                "scope": scopes,
+            }
+            if config_id:
+                params["config_id"] = config_id
+            query = urllib.parse.urlencode(params)
+            return f"https://www.facebook.com/{META_GRAPH_API_VERSION}/dialog/oauth?{query}"
+
+        if provider == "linkedin":
+            scopes = (
+                "openid profile email w_member_social"
+                # " rw_organization_admin"
+                # " w_organization_social"
+            )
+            params = {
+                "response_type": "code",
+                "client_id": client_id,
+                "redirect_uri": redirect_uri,
+                "state": state,
+                "scope": scopes,
+            }
+            query = urllib.parse.urlencode(params)
+            return f"https://www.linkedin.com/oauth/v2/authorization?{query}"
 
         if provider in OAuthManager._PKCE_PROVIDERS:
             params = {

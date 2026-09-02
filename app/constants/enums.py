@@ -98,6 +98,7 @@ class ApiProvider(str, Enum):
     MOCK = "MOCK"
     INSTAGRAM = "INSTAGRAM"
     TWITTER = "TWITTER"
+    WHATSAPP = "WHATSAPP"
 
 
 class RoleType(str, Enum):
@@ -131,6 +132,9 @@ class PublishStatus(str, Enum):
     PENDING = "PENDING"
     PUBLISHED = "PUBLISHED"
     FAILED = "FAILED"
+    SENT = "SENT"
+    DELIVERED = "DELIVERED"
+    READ = "READ"
 
 
 class SnapshotType(str, Enum):

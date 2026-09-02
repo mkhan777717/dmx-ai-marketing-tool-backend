@@ -23,10 +23,15 @@ class InstagramConnector(AbstractConnector):
         self.webhook_handler = InstagramWebhookHandler(self.client_secret)
 
     async def connect(
-        self, auth_code: str, code_verifier: str | None = None
+        self,
+        auth_code: str,
+        code_verifier: str | None = None,
+        redirect_uri: str | None = None,
     ) -> dict[str, Any]:
         """Exchanges authorization code for tokens and fetches initial metadata."""
-        token_data = await self.oauth_handler.exchange_code(auth_code)
+        token_data = await self.oauth_handler.exchange_code(
+            auth_code, redirect_uri=redirect_uri
+        )
 
         sync_engine = InstagramSyncEngine(token_data["access_token"])
         sync_data = await sync_engine.perform_sync(sync_type="full")
@@ -86,20 +91,51 @@ class InstagramConnector(AbstractConnector):
         return IntegrationCapabilities(
             can_sync=True,
             can_webhook=True,
-            supported_actions=["publish_image", "read_profile"],
+            supported_actions=[
+                "publish_image",
+                "publish_video",
+                "publish_reels",
+                "publish_carousel",
+                "read_profile",
+            ],
         )
 
     async def publish(
-        self, page_id: str, content: str, page_access_token: str, image_url: str = ""
+        self,
+        page_id: str,
+        content: str,
+        page_access_token: str,
+        image_url: str = "",
+        video_url: str = "",
+        image_urls: list[str] | None = None,
+        items: list[Any] | None = None,
+        is_reel: bool = False,
     ) -> dict[str, Any]:
         """
-        Helper method to publish an image post to a specific Instagram Account.
+        Helper method to publish an image, video, Reels, or Carousel post to a specific Instagram Account.
         In the context of the platform, `page_id` is the IG User ID, and `page_access_token` is the associated Facebook Page access token.
         """
-        if not image_url:
-            raise ValueError("Instagram publishing currently requires an image_url.")
-
         publisher = InstagramPublisher(page_access_token)
+
+        carousel_items = items or image_urls
+        if carousel_items:
+            return await publisher.publish_carousel_post(
+                page_id, items=carousel_items, caption=content
+            )
+
+        if not image_url and not video_url:
+            raise ValueError(
+                "Instagram publishing requires an image_url, video_url, or items/image_urls list."
+            )
+
+        if video_url:
+            if is_reel:
+                return await publisher.publish_reels_post(
+                    page_id, video_url=video_url, caption=content
+                )
+            return await publisher.publish_video_post(
+                page_id, video_url=video_url, caption=content
+            )
         return await publisher.publish_image_post(
             page_id, image_url=image_url, caption=content
         )

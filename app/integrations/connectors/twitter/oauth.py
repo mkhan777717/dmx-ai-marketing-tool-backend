@@ -31,7 +31,10 @@ class TwitterOAuthHandler:
         return headers
 
     async def exchange_code(
-        self, auth_code: str, code_verifier: str | None = None
+        self,
+        auth_code: str,
+        code_verifier: str | None = None,
+        redirect_uri: str | None = None,
     ) -> dict[str, Any]:
         """Exchanges an authorization code for an access token using PKCE."""
         if not code_verifier:
@@ -39,10 +42,11 @@ class TwitterOAuthHandler:
                 "code_verifier is strictly required for X/Twitter OAuth 2.0 PKCE token exchange."
             )
 
+        effective_redirect_uri = redirect_uri or self.redirect_uri
         data = {
             "grant_type": "authorization_code",
             "code": auth_code,
-            "redirect_uri": self.redirect_uri,
+            "redirect_uri": effective_redirect_uri,
             "client_id": self.client_id,
             "code_verifier": code_verifier,
         }

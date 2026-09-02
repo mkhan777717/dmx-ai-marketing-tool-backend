@@ -9,6 +9,7 @@ from app.integrations.connectors.linkedin import LinkedInConnector
 from app.integrations.connectors.mock import MockConnector
 from app.integrations.connectors.slack import SlackConnector
 from app.integrations.connectors.twitter import TwitterConnector
+from app.integrations.connectors.whatsapp import WhatsAppConnector
 from app.integrations.interfaces import BaseConnector
 
 
@@ -51,3 +52,4 @@ ConnectorRegistry.register("instagram", InstagramConnector)
 ConnectorRegistry.register("google", GoogleConnector)
 ConnectorRegistry.register("slack", SlackConnector)
 ConnectorRegistry.register("twitter", TwitterConnector)
+ConnectorRegistry.register("whatsapp", WhatsAppConnector)

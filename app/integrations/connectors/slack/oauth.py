@@ -17,13 +17,16 @@ class SlackOAuthHandler:
             "http://localhost:8000/api/v1/integrations/oauth/callback",
         )
 
-    async def exchange_code(self, auth_code: str) -> dict:
+    async def exchange_code(
+        self, auth_code: str, redirect_uri: str | None = None
+    ) -> dict:
         """Exchanges an authorization code for a bot access token and workspace info."""
+        effective_redirect_uri = redirect_uri or self.redirect_uri
         data = {
             "client_id": self.client_id,
             "client_secret": self.client_secret,
             "code": auth_code,
-            "redirect_uri": self.redirect_uri,
+            "redirect_uri": effective_redirect_uri,
         }
 
         # Slack requires POST requests for OAuth with form-encoded data
