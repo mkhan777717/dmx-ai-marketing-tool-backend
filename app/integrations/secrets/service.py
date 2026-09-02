@@ -21,10 +21,23 @@ class SecretService:
 
     def get_provider_credentials(self, provider: str) -> dict[str, str]:
         """Fetch client_id and client_secret for a given provider from the secret adapter."""
-        client_id = self.adapter.get_secret(f"{provider.upper()}_CLIENT_ID") or ""
-        client_secret = (
-            self.adapter.get_secret(f"{provider.upper()}_CLIENT_SECRET") or ""
-        )
+        provider_upper = provider.upper()
+        client_id = self.adapter.get_secret(f"{provider_upper}_CLIENT_ID") or ""
+        client_secret = self.adapter.get_secret(f"{provider_upper}_CLIENT_SECRET") or ""
+
+        # Instagram & WhatsApp reuse Meta/Facebook App credentials if specific provider credentials are not set
+        if provider_upper in ("INSTAGRAM", "WHATSAPP") and not client_id:
+            client_id = (
+                self.adapter.get_secret("FACEBOOK_CLIENT_ID")
+                or self.adapter.get_secret("META_CLIENT_ID")
+                or ""
+            )
+            client_secret = (
+                self.adapter.get_secret("FACEBOOK_CLIENT_SECRET")
+                or self.adapter.get_secret("META_CLIENT_SECRET")
+                or ""
+            )
+
         return {"client_id": client_id, "client_secret": client_secret}
 
     def encrypt_token(self, token: str) -> str:

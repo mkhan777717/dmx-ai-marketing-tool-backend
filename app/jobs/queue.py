@@ -46,6 +46,7 @@ class QueueService:
 
             # 2. Inject the ID into the payload so the worker can report back
             serialized_payload["job_execution_id"] = str(job_id)
+            job.payload = dict(serialized_payload)
 
             await db.commit()  # Ensure it's committed before the worker picks it up
 

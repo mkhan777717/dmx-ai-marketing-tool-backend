@@ -16,6 +16,61 @@ def publisher():
 
 @pytest.mark.asyncio
 @patch("app.integrations.connectors.linkedin.publisher.httpx.AsyncClient")
+async def test_publish_text_post_success(mock_client_class, publisher):
+    mock_client = AsyncMock()
+    mock_client_class.return_value.__aenter__.return_value = mock_client
+
+    response = Response(
+        201,
+        headers={"x-restli-id": "urn:li:share:123"},
+        request=Request("POST", "https://api.linkedin.com/rest/posts"),
+    )
+    mock_client.post.return_value = response
+
+    result = await publisher.publish_text_post(
+        author_urn="urn:li:person:author",
+        text="Test post",
+    )
+
+    assert result == "urn:li:share:123"
+
+    mock_client.post.assert_called_once_with(
+        "https://api.linkedin.com/rest/posts",
+        json={
+            "author": "urn:li:person:author",
+            "lifecycleState": "PUBLISHED",
+            "commentary": "Test post",
+            "visibility": "PUBLIC",
+            "distribution": {"feedDistribution": "MAIN_FEED"},
+        },
+        headers=publisher.headers,
+    )
+
+
+@pytest.mark.asyncio
+@patch("app.integrations.connectors.linkedin.publisher.httpx.AsyncClient")
+async def test_publish_text_post_error(mock_client_class, publisher):
+    mock_client = AsyncMock()
+    mock_client_class.return_value.__aenter__.return_value = mock_client
+
+    response = Response(
+        422,
+        text='{"message":"ERROR :: /distribution :: field is required"}',
+        request=Request("POST", "https://api.linkedin.com/rest/posts"),
+    )
+    mock_client.post.return_value = response
+
+    with pytest.raises(LinkedInPublishError) as exc_info:
+        await publisher.publish_text_post(
+            author_urn="urn:li:person:author",
+            text="Test post",
+        )
+
+    assert "Failed to publish text post" in str(exc_info.value)
+
+
+@pytest.mark.asyncio
+@patch("app.integrations.connectors.linkedin.publisher.httpx.AsyncClient")
 async def test_publish_image_post_success(mock_client_class, publisher):
     mock_client = AsyncMock()
     mock_client_class.return_value.__aenter__.return_value = mock_client
@@ -84,6 +139,7 @@ async def test_publish_image_post_success(mock_client_class, publisher):
             "lifecycleState": "PUBLISHED",
             "commentary": "Test post",
             "visibility": "PUBLIC",
+            "distribution": {"feedDistribution": "MAIN_FEED"},
             "content": {"media": {"id": "urn:li:image:123"}},
         },
         headers=publisher.headers,

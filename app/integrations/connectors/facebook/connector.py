@@ -25,11 +25,16 @@ class FacebookConnector(AbstractConnector):
         self.webhook_handler = FacebookWebhookHandler(self.client_secret)
 
     async def connect(
-        self, auth_code: str, code_verifier: str | None = None
+        self,
+        auth_code: str,
+        code_verifier: str | None = None,
+        redirect_uri: str | None = None,
     ) -> dict[str, Any]:
         """Exchanges authorization code for tokens and fetches initial metadata."""
         # This exchanges for a short-lived token, then upgrades to a long-lived token
-        token_data = await self.oauth_handler.exchange_code(auth_code)
+        token_data = await self.oauth_handler.exchange_code(
+            auth_code, redirect_uri=redirect_uri
+        )
 
         # Fetch initial profile metadata to associate with the connection
         sync_engine = FacebookSyncEngine(token_data["access_token"])

@@ -29,6 +29,10 @@ class SocialProviderFactory:
             from app.services.social.twitter_provider import TwitterProvider
 
             return TwitterProvider()
+        elif provider_type == ApiProvider.WHATSAPP:
+            from app.services.social.whatsapp_provider import WhatsAppProvider
+
+            return WhatsAppProvider()
         else:
             # Fallback for unconnected or unimplemented
             return MockSocialProvider()

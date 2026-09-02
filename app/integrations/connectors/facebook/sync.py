@@ -84,7 +84,7 @@ class FacebookSyncEngine:
             return {
                 "profile": profile,
                 "pages": pages,
-                "records_synced": 1 + len(pages),
+                "records_synced": len(pages),
             }
 
         return {"status": "skipped", "reason": "unsupported sync type"}

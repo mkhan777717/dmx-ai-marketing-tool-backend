@@ -29,6 +29,7 @@ async def publish_content(
     Publish content to a social account.
     """
     history = await PublishingService.publish_content(db, workspace_id, request)
+    await db.commit()
     return ApiResponse(success=True, message="Content published", data=history)
 
 
