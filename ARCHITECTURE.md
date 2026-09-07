@@ -7,6 +7,7 @@ The AI Marketing Suite is a digital marketing SaaS platform. It leverages artifi
 To build a reliable, extensible, and developer-friendly AI marketing platform that empowers agencies and businesses to run optimized marketing operations. The architecture is designed to support rapid product iteration while maintaining enterprise-grade security and reliability.
 
 ## 3. Project Goals
+
 - **Maintainability:** Clear separation of concerns utilizing the Repository Pattern and Service Layer.
 - **Scalability:** Async-first approach capable of handling high concurrency, easily migratable to a microservices architecture.
 - **Security:** Robust multi-tenancy, JWT-based authentication, and granular Role-Based Access Control (RBAC).

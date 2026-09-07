@@ -99,6 +99,8 @@ class ApiProvider(str, Enum):
     INSTAGRAM = "INSTAGRAM"
     TWITTER = "TWITTER"
     WHATSAPP = "WHATSAPP"
+    YOUTUBE = "YOUTUBE"
+    SLACK = "SLACK"
 
 
 class RoleType(str, Enum):

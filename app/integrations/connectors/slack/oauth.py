@@ -1,6 +1,7 @@
 import os
 
 import httpx
+from pydantic import ValidationError
 
 from app.integrations.connectors.slack.exceptions import SlackAuthError
 from app.integrations.connectors.slack.schemas import SlackOAuthResponse
@@ -35,7 +36,7 @@ class SlackOAuthHandler:
 
             if response.status_code != 200:
                 raise SlackAuthError(
-                    f"HTTP error during code exchange: {response.status_code}"
+                    f"HTTP error during code exchange ({response.status_code}): {response.text}"
                 )
 
             token_data = response.json()
@@ -44,7 +45,22 @@ class SlackOAuthHandler:
                 error_msg = token_data.get("error", "Unknown Slack OAuth Error")
                 raise SlackAuthError(f"Slack OAuth failed: {error_msg}")
 
-            validated_data = SlackOAuthResponse(**token_data)
+            try:
+                validated_data = SlackOAuthResponse(**token_data)
+            except ValidationError as exc:
+                raise SlackAuthError(
+                    f"Invalid response format from Slack OAuth: {str(exc)}"
+                ) from exc
+
+            bot_user_id = (
+                validated_data.bot_user_id
+                or (
+                    validated_data.authed_user.get("id")
+                    if validated_data.authed_user
+                    else None
+                )
+                or "bot"
+            )
 
             # Slack bot tokens don't typically expire by default,
             # though user tokens might if token rotation is enabled.
@@ -53,6 +69,6 @@ class SlackOAuthHandler:
                 "access_token": validated_data.access_token,
                 "team_id": validated_data.team.id,
                 "team_name": validated_data.team.name,
-                "bot_user_id": validated_data.bot_user_id,
+                "bot_user_id": bot_user_id,
                 "app_id": validated_data.app_id,
             }

@@ -298,15 +298,14 @@ def test_oauth_callback_success():
             new_callable=AsyncMock,
         ),
     ):
-        client = TestClient(app)
+        client = TestClient(app, follow_redirects=False)
         res = client.get(
             "/api/v1/integrations/oauth/callback",
             params={"code": "valid_auth_code_123", "state": state},
         )
 
-        assert res.status_code == 200
-        assert res.json()["success"] is True
-        assert "linkedin" in res.json()["message"].lower()
+        assert res.status_code == 307
+        assert "connected=linkedin" in res.headers["location"]
         mock_connect.assert_called_once()
 
 

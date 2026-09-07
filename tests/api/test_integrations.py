@@ -77,3 +77,60 @@ def test_secret_service_encryption():
 
     decrypted = service.decrypt_token(encrypted)
     assert decrypted == original
+
+
+def test_frontend_url_cors_configuration():
+    from fastapi import FastAPI
+
+    from app.config.settings import settings
+    from app.middleware.cors import add_cors_middleware
+
+    assert (
+        settings.FRONTEND_URL
+        == "https://dmx-ai-marketing-tool-frontend-delta.vercel.app"
+    )
+
+    test_app = FastAPI()
+    add_cors_middleware(test_app)
+
+    cors_middleware = next(
+        m for m in test_app.user_middleware if m.cls.__name__ == "CORSMiddleware"
+    )
+    allow_origins = cors_middleware.kwargs.get("allow_origins", [])
+    assert "https://dmx-ai-marketing-tool-frontend-delta.vercel.app" in allow_origins
+    assert "http://localhost:3000" in allow_origins
+
+
+@pytest.mark.asyncio
+async def test_oauth_callback_redirect_to_new_frontend_domain():
+    from unittest.mock import AsyncMock, patch
+
+    from fastapi.testclient import TestClient
+
+    from app.integrations.oauth.manager import OAuthManager
+    from app.main import app
+
+    state = OAuthManager.generate_state(
+        "00000000-0000-0000-0000-000000000000", "google"
+    )
+
+    with (
+        patch(
+            "app.integrations.oauth.service.integration_service.connect_provider",
+            new=AsyncMock(),
+        ),
+        patch(
+            "app.integrations.sync.engine.sync_engine.execute_sync_job",
+            new=AsyncMock(),
+        ),
+    ):
+        client = TestClient(app, follow_redirects=False)
+        response = client.get(
+            "/api/v1/integrations/oauth/callback",
+            params={"code": "mock_code", "state": state},
+        )
+
+        assert response.status_code == 307
+        assert response.headers["location"] == (
+            "https://dmx-ai-marketing-tool-frontend-delta.vercel.app/dashboard/integrations?status=success&connected=google"
+        )

@@ -64,3 +64,60 @@ class DashboardOverviewResponse(BaseModel):
     ai_metrics: dict[str, Any]
     publishing_metrics: dict[str, Any]
     workspace_metrics: dict[str, Any]
+
+
+# -- GA4 Analytics Schemas --
+class GA4MetricHeader(BaseModel):
+    name: str
+    type: str
+
+
+class GA4Row(BaseModel):
+    dimension_values: list[str]
+    metric_values: list[str]
+
+
+class GA4ReportResponse(BaseModel):
+    property_id: str
+    property_name: str
+    dimension_headers: list[str]
+    metric_headers: list[GA4MetricHeader]
+    rows: list[GA4Row]
+    row_count: int
+
+
+# -- Google Ads Analytics Schemas --
+class GoogleAdsRow(BaseModel):
+    campaign_id: str
+    campaign_name: str
+    status: str
+    impressions: int
+    clicks: int
+    cost_micros: int
+    cost: float
+
+
+class GoogleAdsReportResponse(BaseModel):
+    customer_id: str
+    resource_name: str
+    query: str
+    rows: list[GoogleAdsRow]
+    row_count: int
+
+
+# -- Search Console Analytics Schemas --
+class SearchConsoleRow(BaseModel):
+    keys: list[str]
+    clicks: int
+    impressions: int
+    ctr: float
+    position: float
+
+
+class SearchConsoleReportResponse(BaseModel):
+    site_url: str
+    start_date: str
+    end_date: str
+    dimensions: list[str]
+    rows: list[SearchConsoleRow]
+    row_count: int

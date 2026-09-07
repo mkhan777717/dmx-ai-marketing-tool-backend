@@ -3,6 +3,7 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies.auth import get_current_workspace, require_permission
@@ -75,7 +76,7 @@ async def get_oauth_url(
     )
 
 
-@router.get("/oauth/callback", response_model=ApiResponse)
+@router.get("/oauth/callback")
 async def oauth_callback(
     state: str | None = None,
     code: str | None = None,
@@ -169,7 +170,15 @@ async def oauth_callback(
             f"Initial sync for provider {provider} workspace {workspace_id} raised: {sync_exc}"
         )
 
-    return ApiResponse(success=True, message=f"Successfully connected to {provider}")
+    from app.config.settings import settings
+
+    base_frontend_url = (
+        settings.FRONTEND_URL
+        if hasattr(settings, "FRONTEND_URL") and settings.FRONTEND_URL
+        else "http://localhost:3000"
+    ).rstrip("/")
+    frontend_url = f"{base_frontend_url}/dashboard/integrations?status=success&connected={provider}"
+    return RedirectResponse(url=frontend_url)
 
 
 @router.post("/{provider}/sync", response_model=ApiResponse)
@@ -303,6 +312,14 @@ async def receive_webhook(
         payload = {"raw_data": body_bytes.decode("utf-8", errors="ignore")}
 
     workspace_id = None
+
+    if provider_name == "slack":
+        from app.integrations.connectors.slack.webhook import SlackWebhookHandler
+
+        handler = SlackWebhookHandler("")
+        challenge = handler.verify_challenge(payload)
+        if challenge:
+            return {"challenge": challenge}
 
     if provider_name == "whatsapp":
         from datetime import datetime, timezone

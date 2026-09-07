@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 import httpx
 
@@ -23,6 +24,9 @@ class YouTubePublisher:
         description: str,
         file_size: int,
         mime_type: str,
+        privacy_status: str = "private",
+        tags: list[str] | None = None,
+        category_id: str | None = None,
     ) -> str:
         """
         Uploads a video to YouTube using the Resumable Upload protocol.
@@ -37,12 +41,18 @@ class YouTubePublisher:
             "X-Upload-Content-Type": mime_type,
         }
 
+        snippet: dict[str, Any] = {
+            "title": title[:100] if title else "Untitled Video",
+            "description": description[:5000] if description else "",
+        }
+        if tags:
+            snippet["tags"] = tags
+        if category_id:
+            snippet["categoryId"] = str(category_id)
+
         payload = {
-            "snippet": {
-                "title": title[:100] if title else "Untitled Video",
-                "description": description[:5000] if description else "",
-            },
-            "status": {"privacyStatus": "private"},
+            "snippet": snippet,
+            "status": {"privacyStatus": privacy_status or "private"},
         }
 
         async with httpx.AsyncClient(timeout=60.0) as client:

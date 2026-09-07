@@ -74,7 +74,7 @@ class SyncEngine:
 
         # Execute the sync via the connector abstraction
         try:
-            sync_result = await connector.sync(sync_type=sync_type)
+            sync_result = await connector.sync(sync_type=sync_type, provider=provider)
         except OAuthTokenError as e:
             logger.warning(
                 f"Token expired for {provider} workspace {workspace_id}. Marking connection EXPIRED."
@@ -410,16 +410,55 @@ class SyncEngine:
                             },
                         )
 
-        elif provider == "google" and "business_accounts" in sync_result:
-            business_accounts = sync_result["business_accounts"]
-            if not business_accounts:
+        elif (provider in ("google", "youtube")) and (
+            "business_accounts" in sync_result
+            or "youtube_channels" in sync_result
+            or "ga4_properties" in sync_result
+            or "google_ads_customers" in sync_result
+            or "search_console_sites" in sync_result
+        ):
+            business_accounts = sync_result.get("business_accounts", [])
+            youtube_channels = sync_result.get("youtube_channels", [])
+            ga4_properties = sync_result.get("ga4_properties")
+            google_ads_customers = sync_result.get("google_ads_customers")
+            search_console_sites = sync_result.get("search_console_sites")
+
+            current_meta = dict(connection.metadata_info or {})
+            meta_updated = False
+
+            if ga4_properties is not None:
+                current_meta["ga4_properties"] = ga4_properties
+                meta_updated = True
+
+            if google_ads_customers is not None:
+                current_meta["google_ads_customers"] = google_ads_customers
+                meta_updated = True
+
+            if search_console_sites is not None:
+                current_meta["search_console_sites"] = search_console_sites
+                meta_updated = True
+
+            if meta_updated:
+                await integration_connection_repo.update(
+                    db,
+                    db_obj=connection,
+                    obj_in={"metadata_info": current_meta},
+                )
+
+            if (
+                not business_accounts
+                and not youtube_channels
+                and not ga4_properties
+                and not google_ads_customers
+                and not search_console_sites
+            ):
                 logger.warning(
-                    f"No Google business accounts found for workspace {workspace_id}."
+                    f"No Google business accounts, YouTube channels, GA4 properties, Google Ads customers, or Search Console sites found for workspace {workspace_id}."
                 )
 
             if not connection.access_token:
                 logger.warning(
-                    f"IntegrationConnection for Google workspace {workspace_id} missing access token."
+                    f"IntegrationConnection for Google/YouTube workspace {workspace_id} missing access token."
                 )
             else:
                 decrypted_token = secret_service.decrypt_token(connection.access_token)
@@ -488,6 +527,111 @@ class SyncEngine:
                                     "is_active": True,
                                 },
                             )
+
+                for channel in youtube_channels:
+                    channel_id = channel.get("channel_id")
+                    channel_title = channel.get("title") or "YouTube Channel"
+
+                    if not channel_id:
+                        logger.warning("YouTube channel missing channel_id, skipping.")
+                        continue
+
+                    # 1. Find existing
+                    existing_accounts = await social_account_repo.get_all(
+                        db,
+                        filters={
+                            "workspace_id": workspace_id,
+                            "provider": ApiProvider.YOUTUBE,
+                            "account_id": channel_id,
+                        },
+                    )
+
+                    if existing_accounts:
+                        # 2. Update existing
+                        existing = existing_accounts[0]
+                        await social_account_repo.update(
+                            db,
+                            db_obj=existing,
+                            obj_in={
+                                "name": channel_title,
+                                "access_token": encrypted_token,
+                                "refresh_token": encrypted_refresh_token,
+                                "expires_at": connection.expires_at,
+                                "is_active": True,
+                            },
+                        )
+                    else:
+                        # 3. Create new
+                        await social_account_repo.create(
+                            db,
+                            obj_in={
+                                "workspace_id": workspace_id,
+                                "provider": ApiProvider.YOUTUBE,
+                                "account_id": channel_id,
+                                "name": channel_title,
+                                "access_token": encrypted_token,
+                                "refresh_token": encrypted_refresh_token,
+                                "expires_at": connection.expires_at,
+                                "is_active": True,
+                            },
+                        )
+
+        elif provider == "slack" and "channels" in sync_result:
+            channels = sync_result.get("channels", [])
+            if not channels:
+                logger.warning(f"No Slack channels found for workspace {workspace_id}.")
+
+            if not connection.access_token:
+                logger.warning(
+                    f"IntegrationConnection for Slack workspace {workspace_id} missing access token."
+                )
+            else:
+                decrypted_token = secret_service.decrypt_token(connection.access_token)
+                encrypted_token = secret_service.encrypt_token(decrypted_token)
+
+                for ch in channels:
+                    ch_id = ch.get("id")
+                    ch_name = ch.get("name") or "Slack Channel"
+
+                    if not ch_id:
+                        logger.warning("Slack channel missing 'id', skipping.")
+                        continue
+
+                    # 1. Find existing
+                    existing_accounts = await social_account_repo.get_all(
+                        db,
+                        filters={
+                            "workspace_id": workspace_id,
+                            "provider": ApiProvider.SLACK,
+                            "account_id": ch_id,
+                        },
+                    )
+
+                    if existing_accounts:
+                        # 2. Update existing
+                        existing = existing_accounts[0]
+                        await social_account_repo.update(
+                            db,
+                            db_obj=existing,
+                            obj_in={
+                                "name": ch_name,
+                                "access_token": encrypted_token,
+                                "is_active": True,
+                            },
+                        )
+                    else:
+                        # 3. Create new
+                        await social_account_repo.create(
+                            db,
+                            obj_in={
+                                "workspace_id": workspace_id,
+                                "provider": ApiProvider.SLACK,
+                                "account_id": ch_id,
+                                "name": ch_name,
+                                "access_token": encrypted_token,
+                                "is_active": True,
+                            },
+                        )
 
         return sync_result
 

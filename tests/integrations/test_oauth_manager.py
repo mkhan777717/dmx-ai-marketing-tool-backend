@@ -112,6 +112,39 @@ def test_google_oauth_url():
 
     assert "accounts.google.com/o/oauth2/v2/auth" in url
     assert "business.manage" in url
+    assert "analytics.readonly" in url
+    assert "adwords" in url
+    assert "webmasters.readonly" in url
+    assert "access_type=offline" in url
+    assert "prompt=consent" in url
+    assert f"state={state}" in url
+
+    # Cleanup
+    OAuthManager.validate_state(state)
+
+
+def test_api_provider_youtube_exists():
+    from app.constants.enums import ApiProvider
+
+    assert ApiProvider.YOUTUBE.value == "YOUTUBE"
+
+
+def test_youtube_oauth_url():
+    workspace_id = "test-ws-id"
+    provider = "youtube"
+    state = OAuthManager.generate_state(workspace_id, provider)
+
+    url = OAuthManager.get_authorization_url(
+        provider=provider,
+        state=state,
+        redirect_uri="http://localhost/callback",
+        client_id="testclient",
+    )
+
+    assert "accounts.google.com/o/oauth2/v2/auth" in url
+    assert "youtube.upload" in url
+    assert "youtube.readonly" in url
+    assert "business.manage" not in url
     assert "access_type=offline" in url
     assert "prompt=consent" in url
     assert f"state={state}" in url

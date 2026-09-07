@@ -14,15 +14,15 @@ class SlackTeam(BaseModel):
 
 class SlackOAuthResponse(BaseModel):
     ok: bool
-    app_id: str
-    authed_user: Dict[str, Any]
-    scope: str
-    token_type: str
     access_token: str
-    bot_user_id: str
     team: SlackTeam
+    app_id: Optional[str] = None
+    authed_user: Optional[Dict[str, Any]] = None
+    scope: Optional[str] = None
+    token_type: Optional[str] = None
+    bot_user_id: Optional[str] = None
     enterprise: Optional[Dict[str, Any]] = None
-    is_enterprise_install: bool
+    is_enterprise_install: Optional[bool] = False
 
 
 class SlackAuthTestResponse(BaseModel):

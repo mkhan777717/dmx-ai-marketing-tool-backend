@@ -14,9 +14,9 @@ class GoogleTokenResponse(BaseModel):
 class GoogleProfileResponse(BaseModel):
     id: str
     email: str
-    verified_email: bool
-    name: str
-    given_name: str
-    family_name: str
-    picture: str
-    locale: str
+    verified_email: bool = True
+    name: Optional[str] = None
+    given_name: Optional[str] = None
+    family_name: Optional[str] = None
+    picture: Optional[str] = None
+    locale: Optional[str] = None

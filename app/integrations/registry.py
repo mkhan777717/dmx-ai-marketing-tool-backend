@@ -40,8 +40,14 @@ class ConnectorFactory:
         Expects the connector constructor to take `credentials` and `access_token`.
         """
         connector_cls = ConnectorRegistry.get_connector(provider_name)
-        # Using a convention that connectors take these kwargs
-        return connector_cls(credentials=credentials, access_token=access_token)
+        try:
+            return connector_cls(
+                credentials=credentials,
+                access_token=access_token,
+                provider_name=provider_name,
+            )
+        except TypeError:
+            return connector_cls(credentials=credentials, access_token=access_token)
 
 
 # Auto-register known connectors
@@ -50,6 +56,7 @@ ConnectorRegistry.register("linkedin", LinkedInConnector)
 ConnectorRegistry.register("facebook", FacebookConnector)
 ConnectorRegistry.register("instagram", InstagramConnector)
 ConnectorRegistry.register("google", GoogleConnector)
+ConnectorRegistry.register("youtube", GoogleConnector)
 ConnectorRegistry.register("slack", SlackConnector)
 ConnectorRegistry.register("twitter", TwitterConnector)
 ConnectorRegistry.register("whatsapp", WhatsAppConnector)

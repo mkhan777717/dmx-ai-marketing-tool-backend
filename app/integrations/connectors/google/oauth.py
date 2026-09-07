@@ -1,3 +1,4 @@
+import logging
 import os
 from datetime import datetime, timedelta, timezone
 
@@ -5,6 +6,8 @@ import httpx
 
 from app.integrations.connectors.google.exceptions import GoogleAuthError
 from app.integrations.connectors.google.schemas import GoogleTokenResponse
+
+logger = logging.getLogger(__name__)
 
 
 class GoogleOAuthHandler:

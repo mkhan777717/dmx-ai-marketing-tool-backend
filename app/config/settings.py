@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     HOST: str = "127.0.0.1"
     PORT: int = 8000
 
+    # Frontend URL
+    FRONTEND_URL: str = "https://dmx-ai-marketing-tool-frontend-delta.vercel.app"
+
     # Database
     DATABASE_URL: str | None = None
 

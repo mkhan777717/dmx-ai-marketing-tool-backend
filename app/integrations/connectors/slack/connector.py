@@ -57,7 +57,7 @@ class SlackConnector(AbstractConnector):
         except Exception:
             return False
 
-    async def sync(self, sync_type: str = "full") -> dict[str, Any]:
+    async def sync(self, sync_type: str = "full", **kwargs) -> dict[str, Any]:
         """Synchronizes data from Slack (e.g. channel lists)."""
         if not self.access_token:
             raise ValueError("Access token required for sync.")

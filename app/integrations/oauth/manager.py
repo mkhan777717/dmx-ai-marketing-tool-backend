@@ -74,19 +74,37 @@ class OAuthManager:
             )
 
         if provider == "slack":
-            return f"https://slack.com/oauth/v2/authorize?client_id={client_id}&state={state}&redirect_uri={redirect_uri}&scope=chat:write,commands"
+            params = {
+                "client_id": client_id,
+                "state": state,
+                "redirect_uri": redirect_uri,
+                "scope": "chat:write,channels:read,groups:read",
+            }
+            query = urllib.parse.urlencode(params)
+            return f"https://slack.com/oauth/v2/authorize?{query}"
         if provider == "mock":
             return f"https://mockprovider.com/oauth/authorize?client_id={client_id}&state={state}&redirect_uri={redirect_uri}"
-        if provider == "google":
-            scopes = " ".join(
-                [
+        if provider in ("google", "youtube"):
+            if provider == "youtube":
+                scopes_list = [
+                    "openid",
+                    "email",
+                    "profile",
+                    "https://www.googleapis.com/auth/youtube.upload",
+                    "https://www.googleapis.com/auth/youtube.readonly",
+                ]
+            else:
+                scopes_list = [
                     "openid",
                     "email",
                     "profile",
                     "https://www.googleapis.com/auth/business.manage",
                     "https://www.googleapis.com/auth/youtube.upload",
+                    "https://www.googleapis.com/auth/analytics.readonly",
+                    "https://www.googleapis.com/auth/adwords",
+                    "https://www.googleapis.com/auth/webmasters.readonly",
                 ]
-            )
+            scopes = " ".join(scopes_list)
             params = {
                 "response_type": "code",
                 "client_id": client_id,
