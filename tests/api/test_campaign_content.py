@@ -136,3 +136,129 @@ async def test_list_campaign_contents(
         )
         assert response.status_code == 200
         assert response.json()["data"] == []
+
+
+@pytest.mark.asyncio
+async def test_create_campaign_content_with_image_url(
+    async_client: AsyncClient, override_auth_deps, mock_workspace_id, mock_campaign_id
+):
+    with (
+        patch(
+            "app.api.v1.endpoints.campaign_content.AIContentService.create_campaign_content"
+        ) as mock_create,
+        patch(
+            "sqlalchemy.ext.asyncio.AsyncSession.refresh",
+            new_callable=AsyncMock,
+        ),
+    ):
+        from datetime import datetime, timezone
+
+        from app.constants.enums import (
+            AssetStatus,
+            AssetType,
+            ContentStatus,
+            ContentType,
+        )
+        from app.models.asset import Asset
+        from app.models.campaign_content import CampaignContent
+
+        mock_asset = Asset(
+            id=uuid.uuid4(),
+            workspace_id=mock_workspace_id,
+            file_name="demo.png",
+            original_file_name="demo.png",
+            asset_type=AssetType.IMAGE,
+            mime_type="image/png",
+            file_size=1024,
+            storage_provider="external",
+            storage_key="external/demo.png",
+            public_url="https://images.unsplash.com/photo-1579783902614-a3fb3927b675",
+            checksum="abc",
+            status=AssetStatus.READY,
+        )
+
+        mock_content = CampaignContent(
+            id=uuid.uuid4(),
+            campaign_id=mock_campaign_id,
+            title="Image Post",
+            content_type=ContentType.SOCIAL_POST,
+            status=ContentStatus.DRAFT,
+            language="en",
+            version=1,
+            is_current=True,
+            assets=[mock_asset],
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+        )
+        mock_create.return_value = mock_content
+
+        payload = {
+            "campaign_id": str(mock_campaign_id),
+            "title": "Image Post",
+            "content_type": "SOCIAL_POST",
+            "image_url": "https://images.unsplash.com/photo-1579783902614-a3fb3927b675",
+        }
+
+        response = await async_client.post(
+            f"/api/v1/workspaces/{mock_workspace_id}/campaigns/{mock_campaign_id}/contents",
+            json=payload,
+        )
+
+        assert response.status_code == 201
+        data = response.json()["data"]
+        assert data["title"] == "Image Post"
+        assert len(data["assets"]) == 1
+        assert (
+            data["assets"][0]["public_url"]
+            == "https://images.unsplash.com/photo-1579783902614-a3fb3927b675"
+        )
+        assert data["assets"][0]["asset_type"] == "IMAGE"
+
+
+@pytest.mark.asyncio
+async def test_create_campaign_content_invalid_image_url(
+    async_client: AsyncClient, override_auth_deps, mock_workspace_id, mock_campaign_id
+):
+    payload = {
+        "campaign_id": str(mock_campaign_id),
+        "title": "Invalid Image Post",
+        "content_type": "SOCIAL_POST",
+        "image_url": "ftp://unsupported-schema.com/image.png",
+    }
+
+    response = await async_client.post(
+        f"/api/v1/workspaces/{mock_workspace_id}/campaigns/{mock_campaign_id}/contents",
+        json=payload,
+    )
+
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_campaign_content_workspace_unauthorized(
+    async_client: AsyncClient, mock_user_id, mock_workspace_id, mock_campaign_id
+):
+    def override_get_current_user():
+        return User(id=mock_user_id, email="unauthorized@example.com")
+
+    app.dependency_overrides[get_current_user] = override_get_current_user
+
+    try:
+        with (
+            patch(
+                "app.api.dependencies.auth.workspace_member_repo.get_member",
+                return_value=None,
+            ),
+            patch(
+                "app.api.dependencies.auth.workspace_repo.get_by_id",
+                return_value=Workspace(id=mock_workspace_id, owner_id=uuid.uuid4()),
+            ),
+        ):
+            response = await async_client.get(
+                f"/api/v1/workspaces/{mock_workspace_id}/campaigns/{mock_campaign_id}/contents",
+                headers={"X-Workspace-ID": str(mock_workspace_id)},
+            )
+            assert response.status_code == 403
+            assert response.json()["detail"] == "Not authorized"
+    finally:
+        app.dependency_overrides.clear()

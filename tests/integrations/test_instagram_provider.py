@@ -102,6 +102,111 @@ async def test_get_account_info_no_ig_accounts(provider, mock_secret_service):
 
 
 @pytest.mark.asyncio
+async def test_publish_content_single_image_success(
+    provider, account, mock_secret_service, mock_publisher
+):
+    image_asset = Asset(
+        id=uuid.uuid4(),
+        asset_type=AssetType.IMAGE,
+        public_url="https://whvrwwuxejaofqwhhxgc.supabase.co/storage/v1/object/public/campaign-assets/assets/test.jpg",
+    )
+    content = CampaignContent(
+        id=uuid.uuid4(),
+        title="Single Image Post",
+        body="Caption text",
+        assets=[image_asset],
+    )
+
+    mock_publisher.publish_image_post.return_value = {"id": "ig_image_post_123"}
+
+    post_id = await provider.publish_content(account, content)
+
+    assert post_id == "ig_image_post_123"
+    mock_publisher.publish_image_post.assert_called_once_with(
+        ig_user_id="ig_12345",
+        image_url="https://whvrwwuxejaofqwhhxgc.supabase.co/storage/v1/object/public/campaign-assets/assets/test.jpg",
+        caption="Caption text",
+    )
+
+
+@pytest.mark.asyncio
+async def test_publish_content_carousel_success(
+    provider, account, mock_secret_service, mock_publisher
+):
+    image_asset1 = Asset(
+        id=uuid.uuid4(),
+        asset_type=AssetType.IMAGE,
+        public_url="https://whvrwwuxejaofqwhhxgc.supabase.co/storage/v1/object/public/campaign-assets/assets/1.jpg",
+    )
+    image_asset2 = Asset(
+        id=uuid.uuid4(),
+        asset_type=AssetType.IMAGE,
+        public_url="https://whvrwwuxejaofqwhhxgc.supabase.co/storage/v1/object/public/campaign-assets/assets/2.jpg",
+    )
+    content = CampaignContent(
+        id=uuid.uuid4(),
+        title="Carousel Post",
+        body="Carousel caption",
+        assets=[image_asset1, image_asset2],
+    )
+
+    mock_publisher.publish_carousel_post.return_value = {"id": "ig_carousel_post_123"}
+
+    post_id = await provider.publish_content(account, content)
+
+    assert post_id == "ig_carousel_post_123"
+    mock_publisher.publish_carousel_post.assert_called_once_with(
+        ig_user_id="ig_12345",
+        items=[
+            {
+                "media_type": "IMAGE",
+                "url": "https://whvrwwuxejaofqwhhxgc.supabase.co/storage/v1/object/public/campaign-assets/assets/1.jpg",
+            },
+            {
+                "media_type": "IMAGE",
+                "url": "https://whvrwwuxejaofqwhhxgc.supabase.co/storage/v1/object/public/campaign-assets/assets/2.jpg",
+            },
+        ],
+        caption="Carousel caption",
+    )
+
+
+@pytest.mark.asyncio
+async def test_publish_content_filters_stale_webpage_asset(
+    provider, account, mock_secret_service, mock_publisher
+):
+    # Stale HTML URL + 1 valid image asset
+    stale_html_asset = Asset(
+        id=uuid.uuid4(),
+        asset_type=AssetType.IMAGE,
+        public_url="https://www.imagesbazaar.com/moreinfo/SM1123843",
+    )
+    valid_supabase_asset = Asset(
+        id=uuid.uuid4(),
+        asset_type=AssetType.IMAGE,
+        public_url="https://whvrwwuxejaofqwhhxgc.supabase.co/storage/v1/object/public/campaign-assets/assets/RiderProof.jpeg",
+    )
+    content = CampaignContent(
+        id=uuid.uuid4(),
+        title="Post with Stale Webpage URL",
+        body="Single image post",
+        assets=[stale_html_asset, valid_supabase_asset],
+    )
+
+    mock_publisher.publish_image_post.return_value = {"id": "ig_filtered_post_123"}
+
+    # Safeguard should filter out stale_html_asset, leaving 1 valid image asset -> single image post
+    post_id = await provider.publish_content(account, content)
+
+    assert post_id == "ig_filtered_post_123"
+    mock_publisher.publish_image_post.assert_called_once_with(
+        ig_user_id="ig_12345",
+        image_url="https://whvrwwuxejaofqwhhxgc.supabase.co/storage/v1/object/public/campaign-assets/assets/RiderProof.jpeg",
+        caption="Single image post",
+    )
+
+
+@pytest.mark.asyncio
 async def test_publish_content_video_success(
     provider, account, mock_secret_service, mock_publisher
 ):

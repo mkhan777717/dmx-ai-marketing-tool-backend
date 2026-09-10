@@ -1,3 +1,4 @@
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Sequence
@@ -12,6 +13,9 @@ from app.repositories.publish_history import publish_history_repo
 from app.repositories.social_account import social_account_repo
 from app.schemas.publishing import PublishRequest
 from app.services.social.factory import SocialProviderFactory
+from app.utils.sanitizer import sanitize_sensitive_data
+
+logger = logging.getLogger(__name__)
 
 
 class PublishingService:
@@ -57,7 +61,22 @@ class PublishingService:
             }
         except Exception as e:
             # 4b. Failure update
-            update_data = {"status": PublishStatus.FAILED, "error_message": str(e)}
+            logger.exception(
+                f"Publishing content {content.id} for social account {account.id} failed"
+            )
+            raw_msg = str(e).strip()
+            exc_type = type(e).__name__
+            if not raw_msg:
+                error_msg = f"{exc_type}: Publishing failed due to an unhandled error"
+            elif exc_type in raw_msg:
+                error_msg = raw_msg
+            else:
+                error_msg = f"{exc_type}: {raw_msg}"
+
+            update_data = {
+                "status": PublishStatus.FAILED,
+                "error_message": sanitize_sensitive_data(error_msg),
+            }
 
         # Commit the result to DB
         return await publish_history_repo.update(

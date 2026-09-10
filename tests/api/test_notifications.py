@@ -54,7 +54,7 @@ def override_auth_deps(mock_user_id, mock_workspace_id):
 
 
 @pytest.mark.asyncio
-async def test_list_notifications(
+async def test_list_notifications_with_header(
     async_client: AsyncClient, override_auth_deps, mock_workspace_id
 ):
     with patch(
@@ -62,10 +62,77 @@ async def test_list_notifications(
     ) as mock_get:
         mock_get.return_value = []
         response = await async_client.get(
-            f"/api/v1/notifications?workspace_id={mock_workspace_id}"
+            "/api/v1/notifications?limit=50",
+            headers={"X-Workspace-ID": str(mock_workspace_id)},
         )
         assert response.status_code == 200
         assert response.json() == []
+
+
+@pytest.mark.asyncio
+async def test_list_notifications_with_query_param(
+    async_client: AsyncClient, override_auth_deps, mock_workspace_id
+):
+    with patch(
+        "app.api.v1.endpoints.notifications.NotificationService.get_unread"
+    ) as mock_get:
+        mock_get.return_value = []
+        response = await async_client.get(
+            f"/api/v1/notifications?workspace_id={mock_workspace_id}&limit=50"
+        )
+        assert response.status_code == 200
+        assert response.json() == []
+
+
+@pytest.mark.asyncio
+async def test_list_notifications_missing_workspace_context(
+    async_client: AsyncClient, override_auth_deps
+):
+    response = await async_client.get("/api/v1/notifications?limit=50")
+    assert response.status_code == 400
+    assert "Workspace context required" in response.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_list_notifications_invalid_header_format(
+    async_client: AsyncClient, override_auth_deps
+):
+    response = await async_client.get(
+        "/api/v1/notifications?limit=50",
+        headers={"X-Workspace-ID": "invalid-uuid-string"},
+    )
+    assert response.status_code == 400
+    assert "Invalid X-Workspace-ID header format" in response.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_permission_enforcement_unauthorized(
+    async_client: AsyncClient, mock_user_id, mock_workspace_id
+):
+    def override_get_current_user():
+        return User(id=mock_user_id, email="unauthorized@example.com")
+
+    app.dependency_overrides[get_current_user] = override_get_current_user
+
+    try:
+        with (
+            patch(
+                "app.api.dependencies.auth.workspace_member_repo.get_member",
+                return_value=None,
+            ),
+            patch(
+                "app.api.dependencies.auth.workspace_repo.get_by_id",
+                return_value=Workspace(id=mock_workspace_id, owner_id=uuid.uuid4()),
+            ),
+        ):
+            response = await async_client.get(
+                "/api/v1/notifications?limit=50",
+                headers={"X-Workspace-ID": str(mock_workspace_id)},
+            )
+            assert response.status_code == 403
+            assert response.json()["detail"] == "Not authorized"
+    finally:
+        app.dependency_overrides.clear()
 
 
 @pytest.mark.asyncio
@@ -114,7 +181,8 @@ async def test_mark_notification_as_read(
         mock_mark.return_value = MockResponse()
 
         response = await async_client.patch(
-            f"/api/v1/notifications/{mock_notification_id}/read?workspace_id={mock_workspace_id}"
+            f"/api/v1/notifications/{mock_notification_id}/read",
+            headers={"X-Workspace-ID": str(mock_workspace_id)},
         )
 
         assert response.status_code == 200
@@ -129,7 +197,8 @@ async def test_mark_all_read(
     ) as mock_mark_all:
         mock_mark_all.return_value = 5
         response = await async_client.patch(
-            f"/api/v1/notifications/read-all?workspace_id={mock_workspace_id}"
+            "/api/v1/notifications/read-all",
+            headers={"X-Workspace-ID": str(mock_workspace_id)},
         )
         assert response.status_code == 200
         assert "5 notifications" in response.json()["message"]

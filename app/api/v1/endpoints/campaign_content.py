@@ -1,7 +1,7 @@
 import uuid
 from typing import Sequence
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, File, Query, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies.auth import (
@@ -230,5 +230,52 @@ async def delete_campaign_content(
     return ApiResponse(
         success=True,
         message="Content deleted",
+        data=content,
+    )
+
+
+@router.post(
+    "/{workspace_id}/campaigns/{campaign_id}/contents/{content_id}/upload-image",
+    response_model=ApiResponse[CampaignContentResponse],
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(require_permission("content", "update"))],
+)
+async def upload_campaign_content_image(
+    workspace_id: uuid.UUID,
+    campaign_id: uuid.UUID,
+    content_id: uuid.UUID,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db_session),
+    _=Depends(get_current_workspace),
+):
+    """
+    Upload an image file (JPEG or PNG) for a specific campaign content item.
+    Stores the binary in Supabase Storage and attaches the resulting Asset to the CampaignContent.
+    """
+    file_bytes = await file.read()
+    filename = file.filename or "image.png"
+    content_type = file.content_type or "image/png"
+
+    try:
+        content = await AIContentService.upload_content_image(
+            db=db,
+            workspace_id=workspace_id,
+            campaign_id=campaign_id,
+            content_id=content_id,
+            file_bytes=file_bytes,
+            filename=filename,
+            content_type=content_type,
+        )
+
+        await db.commit()
+        await db.refresh(content)
+
+    except Exception:
+        await db.rollback()
+        raise
+
+    return ApiResponse(
+        success=True,
+        message="Image uploaded successfully",
         data=content,
     )

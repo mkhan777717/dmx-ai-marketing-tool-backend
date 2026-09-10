@@ -79,7 +79,7 @@ def test_secret_service_encryption():
     assert decrypted == original
 
 
-def test_frontend_url_cors_configuration():
+def test_frontend_url_cors_configuration(monkeypatch):
     from fastapi import FastAPI
 
     from app.config.settings import settings
@@ -99,6 +99,22 @@ def test_frontend_url_cors_configuration():
     allow_origins = cors_middleware.kwargs.get("allow_origins", [])
     assert "https://dmx-ai-marketing-tool-frontend-delta.vercel.app" in allow_origins
     assert "http://localhost:3000" in allow_origins
+    assert "http://127.0.0.1:3000" in allow_origins
+
+    # Test normalization (whitespace, trailing slash, multiple origins)
+    monkeypatch.setattr(
+        settings,
+        "FRONTEND_URL",
+        " https://test1.vercel.app/ , https://test2.vercel.app ",
+    )
+    test_app2 = FastAPI()
+    add_cors_middleware(test_app2)
+    cors_middleware2 = next(
+        m for m in test_app2.user_middleware if m.cls.__name__ == "CORSMiddleware"
+    )
+    allow_origins2 = cors_middleware2.kwargs.get("allow_origins", [])
+    assert "https://test1.vercel.app" in allow_origins2
+    assert "https://test2.vercel.app" in allow_origins2
 
 
 @pytest.mark.asyncio

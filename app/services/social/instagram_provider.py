@@ -29,11 +29,29 @@ class InstagramProvider(BaseSocialProvider):
 
         decrypted_token = secret_service.decrypt_token(account.access_token)
 
+        def is_valid_media_url(url: str | None) -> bool:
+            if not url:
+                return True
+            if not isinstance(url, str):
+                return False
+            u = url.strip().lower()
+            if not (u.startswith("http://") or u.startswith("https://")):
+                return False
+            if (
+                "/moreinfo/" in u
+                or u.endswith(".html")
+                or u.endswith(".htm")
+                or u.endswith(".php")
+            ):
+                return False
+            return True
+
         supported_assets = (
             [
                 a
                 for a in content.assets
                 if a.asset_type in (AssetType.IMAGE, AssetType.VIDEO)
+                and is_valid_media_url(a.public_url)
             ]
             if content.assets
             else []

@@ -1,25 +1,32 @@
+import logging
 from typing import Any, Dict
 
 import httpx
 
 from app.integrations.connectors.instagram.exceptions import InstagramPublishError
 from app.integrations.constants import META_GRAPH_API_VERSION
+from app.utils.sanitizer import sanitize_sensitive_data
+
+logger = logging.getLogger(__name__)
 
 
 class InstagramPublisher:
     GRAPH_API_VERSION = META_GRAPH_API_VERSION
     BASE_URL = f"https://graph.facebook.com/{GRAPH_API_VERSION}"
+    DEFAULT_TIMEOUT = 30.0
 
     def __init__(
         self,
         page_access_token: str,
         max_attempts: int = 10,
         poll_interval: float = 1.0,
+        timeout: float = 30.0,
     ):
         # We need the page access token of the Facebook Page linked to the Instagram account
         self.page_access_token = page_access_token
         self.max_attempts = max_attempts
         self.poll_interval = poll_interval
+        self.timeout = timeout
 
     async def wait_for_container_ready(
         self,
@@ -53,7 +60,7 @@ class InstagramPublisher:
 
         should_close_client = False
         if client is None:
-            client = httpx.AsyncClient()
+            client = httpx.AsyncClient(timeout=self.timeout)
             should_close_client = True
 
         try:
@@ -61,13 +68,21 @@ class InstagramPublisher:
                 try:
                     response = await client.get(status_url, params=params)
                 except httpx.RequestError as e:
-                    raise InstagramPublishError(
-                        f"Failed to check container status (Network error): {str(e)}"
+                    err_safe = sanitize_sensitive_data(str(e))
+                    logger.error(
+                        f"Failed to check container status (Network error): {err_safe}"
                     )
+                    raise InstagramPublishError(
+                        f"Failed to check container status (Network error): {err_safe}"
+                    ) from e
 
                 if response.status_code != 200:
+                    safe_resp = sanitize_sensitive_data(response.text)
+                    logger.error(
+                        f"Failed to check container status (Status Code {response.status_code}): {safe_resp}"
+                    )
                     raise InstagramPublishError(
-                        f"Failed to check container status (Status Code {response.status_code}): {response.text}"
+                        f"Failed to check container status (Status Code {response.status_code}): {safe_resp}"
                     )
 
                 try:
@@ -91,8 +106,12 @@ class InstagramPublisher:
                         data.get("status")
                         or f"Container status code returned {status_code}."
                     )
+                    err_msg_safe = sanitize_sensitive_data(err_msg)
+                    logger.error(
+                        f"Media container processing failed with status '{status_code}': {err_msg_safe}"
+                    )
                     raise InstagramPublishError(
-                        f"Media container processing failed with status '{status_code}': {err_msg}"
+                        f"Media container processing failed with status '{status_code}': {err_msg_safe}"
                     )
                 elif status_code == "IN_PROGRESS":
                     if attempt < attempts_limit:
@@ -133,14 +152,27 @@ class InstagramPublisher:
             "access_token": self.page_access_token,
         }
 
-        async with httpx.AsyncClient() as client:
-            container_response = await client.post(
-                container_url, data=container_payload
-            )
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            try:
+                container_response = await client.post(
+                    container_url, data=container_payload
+                )
+            except httpx.RequestError as e:
+                err_safe = sanitize_sensitive_data(str(e))
+                logger.error(
+                    f"Failed to create media container (Network error): {err_safe}"
+                )
+                raise InstagramPublishError(
+                    f"Failed to create media container (Network error): {err_safe}"
+                ) from e
 
             if container_response.status_code != 200:
+                safe_resp = sanitize_sensitive_data(container_response.text)
+                logger.error(
+                    f"Failed to create media container (Status Code {container_response.status_code}): {safe_resp}"
+                )
                 raise InstagramPublishError(
-                    f"Failed to create media container: {container_response.text}"
+                    f"Failed to create media container (Status Code {container_response.status_code}): {safe_resp}"
                 )
 
             container_data = container_response.json()
@@ -166,11 +198,24 @@ class InstagramPublisher:
                 "access_token": self.page_access_token,
             }
 
-            publish_response = await client.post(publish_url, data=publish_payload)
+            try:
+                publish_response = await client.post(publish_url, data=publish_payload)
+            except httpx.RequestError as e:
+                err_safe = sanitize_sensitive_data(str(e))
+                logger.error(
+                    f"Failed to publish media container (Network error): {err_safe}"
+                )
+                raise InstagramPublishError(
+                    f"Failed to publish media container (Network error): {err_safe}"
+                ) from e
 
             if publish_response.status_code != 200:
+                safe_resp = sanitize_sensitive_data(publish_response.text)
+                logger.error(
+                    f"Failed to publish media container (Status Code {publish_response.status_code}): {safe_resp}"
+                )
                 raise InstagramPublishError(
-                    f"Failed to publish media container: {publish_response.text}"
+                    f"Failed to publish media container (Status Code {publish_response.status_code}): {safe_resp}"
                 )
 
             return publish_response.json()
@@ -198,14 +243,27 @@ class InstagramPublisher:
             "access_token": self.page_access_token,
         }
 
-        async with httpx.AsyncClient() as client:
-            container_response = await client.post(
-                container_url, data=container_payload
-            )
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            try:
+                container_response = await client.post(
+                    container_url, data=container_payload
+                )
+            except httpx.RequestError as e:
+                err_safe = sanitize_sensitive_data(str(e))
+                logger.error(
+                    f"Failed to create video media container (Network error): {err_safe}"
+                )
+                raise InstagramPublishError(
+                    f"Failed to create video media container (Network error): {err_safe}"
+                ) from e
 
             if container_response.status_code != 200:
+                safe_resp = sanitize_sensitive_data(container_response.text)
+                logger.error(
+                    f"Failed to create video media container (Status Code {container_response.status_code}): {safe_resp}"
+                )
                 raise InstagramPublishError(
-                    f"Failed to create video media container: {container_response.text}"
+                    f"Failed to create video media container (Status Code {container_response.status_code}): {safe_resp}"
                 )
 
             container_data = container_response.json()
@@ -231,11 +289,24 @@ class InstagramPublisher:
                 "access_token": self.page_access_token,
             }
 
-            publish_response = await client.post(publish_url, data=publish_payload)
+            try:
+                publish_response = await client.post(publish_url, data=publish_payload)
+            except httpx.RequestError as e:
+                err_safe = sanitize_sensitive_data(str(e))
+                logger.error(
+                    f"Failed to publish video media container (Network error): {err_safe}"
+                )
+                raise InstagramPublishError(
+                    f"Failed to publish video media container (Network error): {err_safe}"
+                ) from e
 
             if publish_response.status_code != 200:
+                safe_resp = sanitize_sensitive_data(publish_response.text)
+                logger.error(
+                    f"Failed to publish video media container (Status Code {publish_response.status_code}): {safe_resp}"
+                )
                 raise InstagramPublishError(
-                    f"Failed to publish video media container: {publish_response.text}"
+                    f"Failed to publish video media container (Status Code {publish_response.status_code}): {safe_resp}"
                 )
 
             return publish_response.json()
@@ -319,7 +390,7 @@ class InstagramPublisher:
 
         child_container_ids: list[str] = []
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
             # Step 1: Create child media containers
             for idx, item in enumerate(parsed_items, start=1):
                 container_url = f"{self.BASE_URL}/{ig_user_id}/media"
@@ -333,10 +404,24 @@ class InstagramPublisher:
                     payload["media_type"] = "VIDEO"
                     payload["video_url"] = item["url"]
 
-                container_resp = await client.post(container_url, data=payload)
-                if container_resp.status_code != 200:
+                try:
+                    container_resp = await client.post(container_url, data=payload)
+                except httpx.RequestError as e:
+                    err_safe = sanitize_sensitive_data(str(e))
+                    logger.error(
+                        f"Failed to create child media container for item {idx} (Network error): {err_safe}"
+                    )
                     raise InstagramPublishError(
-                        f"Failed to create child media container for item {idx}: {container_resp.text}"
+                        f"Failed to create child media container for item {idx} (Network error): {err_safe}"
+                    ) from e
+
+                if container_resp.status_code != 200:
+                    safe_resp = sanitize_sensitive_data(container_resp.text)
+                    logger.error(
+                        f"Failed to create child media container for item {idx} (Status Code {container_resp.status_code}): {safe_resp}"
+                    )
+                    raise InstagramPublishError(
+                        f"Failed to create child media container for item {idx} (Status Code {container_resp.status_code}): {safe_resp}"
                     )
 
                 try:
@@ -372,10 +457,26 @@ class InstagramPublisher:
                 "access_token": self.page_access_token,
             }
 
-            parent_resp = await client.post(parent_container_url, data=parent_payload)
-            if parent_resp.status_code != 200:
+            try:
+                parent_resp = await client.post(
+                    parent_container_url, data=parent_payload
+                )
+            except httpx.RequestError as e:
+                err_safe = sanitize_sensitive_data(str(e))
+                logger.error(
+                    f"Failed to create parent Carousel media container (Network error): {err_safe}"
+                )
                 raise InstagramPublishError(
-                    f"Failed to create parent Carousel media container: {parent_resp.text}"
+                    f"Failed to create parent Carousel media container (Network error): {err_safe}"
+                ) from e
+
+            if parent_resp.status_code != 200:
+                safe_resp = sanitize_sensitive_data(parent_resp.text)
+                logger.error(
+                    f"Failed to create parent Carousel media container (Status Code {parent_resp.status_code}): {safe_resp}"
+                )
+                raise InstagramPublishError(
+                    f"Failed to create parent Carousel media container (Status Code {parent_resp.status_code}): {safe_resp}"
                 )
 
             try:
@@ -406,10 +507,24 @@ class InstagramPublisher:
                 "access_token": self.page_access_token,
             }
 
-            publish_resp = await client.post(publish_url, data=publish_payload)
-            if publish_resp.status_code != 200:
+            try:
+                publish_resp = await client.post(publish_url, data=publish_payload)
+            except httpx.RequestError as e:
+                err_safe = sanitize_sensitive_data(str(e))
+                logger.error(
+                    f"Failed to publish Carousel media container (Network error): {err_safe}"
+                )
                 raise InstagramPublishError(
-                    f"Failed to publish Carousel media container: {publish_resp.text}"
+                    f"Failed to publish Carousel media container (Network error): {err_safe}"
+                ) from e
+
+            if publish_resp.status_code != 200:
+                safe_resp = sanitize_sensitive_data(publish_resp.text)
+                logger.error(
+                    f"Failed to publish Carousel media container (Status Code {publish_resp.status_code}): {safe_resp}"
+                )
+                raise InstagramPublishError(
+                    f"Failed to publish Carousel media container (Status Code {publish_resp.status_code}): {safe_resp}"
                 )
 
             try:
@@ -450,14 +565,27 @@ class InstagramPublisher:
             "access_token": self.page_access_token,
         }
 
-        async with httpx.AsyncClient() as client:
-            container_response = await client.post(
-                container_url, data=container_payload
-            )
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            try:
+                container_response = await client.post(
+                    container_url, data=container_payload
+                )
+            except httpx.RequestError as e:
+                err_safe = sanitize_sensitive_data(str(e))
+                logger.error(
+                    f"Failed to create Reels media container (Network error): {err_safe}"
+                )
+                raise InstagramPublishError(
+                    f"Failed to create Reels media container (Network error): {err_safe}"
+                ) from e
 
             if container_response.status_code != 200:
+                safe_resp = sanitize_sensitive_data(container_response.text)
+                logger.error(
+                    f"Failed to create Reels media container (Status Code {container_response.status_code}): {safe_resp}"
+                )
                 raise InstagramPublishError(
-                    f"Failed to create Reels media container: {container_response.text}"
+                    f"Failed to create Reels media container (Status Code {container_response.status_code}): {safe_resp}"
                 )
 
             try:
@@ -489,11 +617,24 @@ class InstagramPublisher:
                 "access_token": self.page_access_token,
             }
 
-            publish_response = await client.post(publish_url, data=publish_payload)
+            try:
+                publish_response = await client.post(publish_url, data=publish_payload)
+            except httpx.RequestError as e:
+                err_safe = sanitize_sensitive_data(str(e))
+                logger.error(
+                    f"Failed to publish Reels media container (Network error): {err_safe}"
+                )
+                raise InstagramPublishError(
+                    f"Failed to publish Reels media container (Network error): {err_safe}"
+                ) from e
 
             if publish_response.status_code != 200:
+                safe_resp = sanitize_sensitive_data(publish_response.text)
+                logger.error(
+                    f"Failed to publish Reels media container (Status Code {publish_response.status_code}): {safe_resp}"
+                )
                 raise InstagramPublishError(
-                    f"Failed to publish Reels media container: {publish_response.text}"
+                    f"Failed to publish Reels media container (Status Code {publish_response.status_code}): {safe_resp}"
                 )
 
             try:

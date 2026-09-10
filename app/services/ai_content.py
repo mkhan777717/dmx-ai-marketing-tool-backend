@@ -4,7 +4,8 @@ from typing import Sequence
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.constants.enums import ContentStatus
+from app.constants.enums import AssetStatus, AssetType, ContentStatus
+from app.models.asset import Asset
 from app.models.campaign_content import CampaignContent
 from app.repositories.campaign import campaign_repo
 from app.repositories.campaign_content import campaign_content_repo
@@ -15,6 +16,7 @@ from app.schemas.campaign_content import (
     CampaignContentUpdate,
 )
 from app.services.ai.factory import AIProviderFactory
+from app.services.storage import StorageService
 
 
 class AIContentService:
@@ -56,7 +58,8 @@ class AIContentService:
             language=content_in.language or "en",
         )
 
-        obj_in = content_in.model_dump()
+        image_url = content_in.image_url
+        obj_in = content_in.model_dump(exclude={"image_url"})
         obj_in["workspace_id"] = workspace_id
         obj_in["status"] = ContentStatus.DRAFT
 
@@ -73,7 +76,33 @@ class AIContentService:
             obj_in["version"] = 1
             obj_in["is_current"] = True
 
-        return await campaign_content_repo.create(db, obj_in=obj_in)
+        content = await campaign_content_repo.create(db, obj_in=obj_in)
+
+        if image_url:
+            cleaned_url = image_url.strip()
+            filename = cleaned_url.split("/")[-1].split("?")[0] or "image.jpg"
+            asset = Asset(
+                workspace_id=workspace_id,
+                file_name=filename,
+                original_file_name=filename,
+                display_name=filename,
+                asset_type=AssetType.IMAGE,
+                mime_type="image/jpeg",
+                file_size=0,
+                storage_provider="external",
+                storage_key=f"external/{uuid.uuid4()}",
+                public_url=cleaned_url,
+                checksum=str(uuid.uuid4()),
+                status=AssetStatus.READY,
+            )
+            db.add(asset)
+            await db.flush()
+            content.assets.append(asset)
+            db.add(content)
+            await db.flush()
+            await db.refresh(content, attribute_names=["assets"])
+
+        return content
 
     @staticmethod
     async def get_campaign_contents(
@@ -122,10 +151,39 @@ class AIContentService:
         content = await AIContentService.get_content(
             db, workspace_id, campaign_id, content_id
         )
-        update_data = content_in.model_dump(exclude_unset=True)
-        return await campaign_content_repo.update(
+        image_url = content_in.image_url
+        update_data = content_in.model_dump(exclude_unset=True, exclude={"image_url"})
+        content = await campaign_content_repo.update(
             db, db_obj=content, obj_in=update_data
         )
+
+        if image_url:
+            cleaned_url = image_url.strip()
+            filename = cleaned_url.split("/")[-1].split("?")[0] or "image.jpg"
+            asset = Asset(
+                id=uuid.uuid4(),
+                workspace_id=workspace_id,
+                file_name=filename,
+                original_file_name=filename,
+                display_name=filename,
+                asset_type=AssetType.IMAGE,
+                mime_type="image/jpeg",
+                file_size=0,
+                storage_provider="external",
+                storage_key=f"external/{uuid.uuid4()}",
+                public_url=cleaned_url,
+                checksum=str(uuid.uuid4()),
+                status=AssetStatus.READY,
+            )
+            db.add(asset)
+            await db.flush()
+            content.assets.clear()
+            content.assets.append(asset)
+            db.add(content)
+            await db.flush()
+            await db.refresh(content, attribute_names=["assets"])
+
+        return content
 
     @staticmethod
     async def delete_content(
@@ -152,5 +210,51 @@ class AIContentService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Content not found",
             )
+
+        return content
+
+    @staticmethod
+    async def upload_content_image(
+        db: AsyncSession,
+        workspace_id: uuid.UUID,
+        campaign_id: uuid.UUID,
+        content_id: uuid.UUID,
+        file_bytes: bytes,
+        filename: str,
+        content_type: str,
+    ) -> CampaignContent:
+        content = await AIContentService.get_content(
+            db, workspace_id, campaign_id, content_id
+        )
+
+        upload_result = await StorageService.upload_image(
+            file_bytes=file_bytes,
+            original_filename=filename,
+            mime_type=content_type,
+        )
+
+        asset = Asset(
+            id=uuid.uuid4(),
+            workspace_id=workspace_id,
+            file_name=filename,
+            original_file_name=filename,
+            display_name=filename,
+            asset_type=AssetType.IMAGE,
+            mime_type=upload_result["mime_type"],
+            file_size=upload_result["file_size"],
+            storage_provider=upload_result["storage_provider"],
+            storage_key=upload_result["storage_key"],
+            public_url=upload_result["public_url"],
+            checksum=upload_result["checksum"],
+            status=AssetStatus.READY,
+        )
+        db.add(asset)
+        await db.flush()
+
+        content.assets.clear()
+        content.assets.append(asset)
+        db.add(content)
+        await db.flush()
+        await db.refresh(content, attribute_names=["assets"])
 
         return content
