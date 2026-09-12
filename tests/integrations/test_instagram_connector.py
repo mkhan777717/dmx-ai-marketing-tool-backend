@@ -123,3 +123,33 @@ def test_webhook_verification():
     assert (
         connector.webhook_handler.verify_signature(payload, "invalid_format") is False
     )
+
+
+def test_instagram_credential_resolution_fallback():
+    from app.integrations.secrets.service import secret_service
+
+    with patch.object(
+        secret_service.adapter,
+        "get_secret",
+        side_effect=lambda key: {
+            "FACEBOOK_CLIENT_ID": "fb_app_123",
+            "FACEBOOK_CLIENT_SECRET": "fb_sec_456",
+        }.get(key),
+    ):
+        creds = secret_service.get_provider_credentials("instagram")
+        assert creds["client_id"] == "fb_app_123"
+        assert creds["client_secret"] == "fb_sec_456"
+
+
+def test_instagram_redirect_uri_fallback():
+    from app.integrations.connectors.instagram.oauth import InstagramOAuthHandler
+
+    with patch.dict(
+        "os.environ",
+        {
+            "FACEBOOK_REDIRECT_URI": "https://example.com/oauth/callback",
+        },
+        clear=True,
+    ):
+        handler = InstagramOAuthHandler("client_id", "client_secret")
+        assert handler.redirect_uri == "https://example.com/oauth/callback"

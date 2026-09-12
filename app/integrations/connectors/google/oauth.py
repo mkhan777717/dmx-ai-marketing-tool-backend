@@ -1,3 +1,4 @@
+import logging
 import os
 from datetime import datetime, timedelta, timezone
 
@@ -5,6 +6,8 @@ import httpx
 
 from app.integrations.connectors.google.exceptions import GoogleAuthError
 from app.integrations.connectors.google.schemas import GoogleTokenResponse
+
+logger = logging.getLogger(__name__)
 
 
 class GoogleOAuthHandler:
@@ -18,14 +21,17 @@ class GoogleOAuthHandler:
             "http://localhost:8000/api/v1/integrations/oauth/callback",
         )
 
-    async def exchange_code(self, auth_code: str) -> dict:
+    async def exchange_code(
+        self, auth_code: str, redirect_uri: str | None = None
+    ) -> dict:
         """Exchanges an authorization code for an access token and optionally a refresh token."""
+        effective_redirect_uri = redirect_uri or self.redirect_uri
         data = {
             "client_id": self.client_id,
             "client_secret": self.client_secret,
             "code": auth_code,
             "grant_type": "authorization_code",
-            "redirect_uri": self.redirect_uri,
+            "redirect_uri": effective_redirect_uri,
         }
 
         async with httpx.AsyncClient() as client:

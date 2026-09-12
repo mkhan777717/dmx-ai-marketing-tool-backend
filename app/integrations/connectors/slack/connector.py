@@ -24,10 +24,15 @@ class SlackConnector(AbstractConnector):
         self.webhook_handler = SlackWebhookHandler(self.signing_secret)
 
     async def connect(
-        self, auth_code: str, code_verifier: str | None = None
+        self,
+        auth_code: str,
+        code_verifier: str | None = None,
+        redirect_uri: str | None = None,
     ) -> dict[str, Any]:
         """Exchanges authorization code for bot tokens and fetches initial metadata."""
-        token_data = await self.oauth_handler.exchange_code(auth_code)
+        token_data = await self.oauth_handler.exchange_code(
+            auth_code, redirect_uri=redirect_uri
+        )
 
         return {
             "access_token": token_data["access_token"],
@@ -52,7 +57,7 @@ class SlackConnector(AbstractConnector):
         except Exception:
             return False
 
-    async def sync(self, sync_type: str = "full") -> dict[str, Any]:
+    async def sync(self, sync_type: str = "full", **kwargs) -> dict[str, Any]:
         """Synchronizes data from Slack (e.g. channel lists)."""
         if not self.access_token:
             raise ValueError("Access token required for sync.")

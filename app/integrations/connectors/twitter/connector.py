@@ -24,7 +24,10 @@ class TwitterConnector(AbstractConnector):
         self.oauth_handler = TwitterOAuthHandler(self.client_id, self.client_secret)
 
     async def connect(
-        self, auth_code: str, code_verifier: str | None = None
+        self,
+        auth_code: str,
+        code_verifier: str | None = None,
+        redirect_uri: str | None = None,
     ) -> dict[str, Any]:
         """Exchanges authorization code for tokens using PKCE."""
         if not code_verifier:
@@ -32,7 +35,9 @@ class TwitterConnector(AbstractConnector):
                 "code_verifier is strictly required for X/Twitter OAuth 2.0 PKCE token exchange."
             )
 
-        token_data = await self.oauth_handler.exchange_code(auth_code, code_verifier)
+        token_data = await self.oauth_handler.exchange_code(
+            auth_code, code_verifier=code_verifier, redirect_uri=redirect_uri
+        )
         # Fetch initial metadata to validate connection
         self.access_token = token_data["access_token"]
         try:

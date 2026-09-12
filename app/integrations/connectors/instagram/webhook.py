@@ -15,7 +15,11 @@ class InstagramWebhookHandler:
         Instagram webhooks are routed through Facebook's webhook infrastructure
         and use the identical X-Hub-Signature-256 header.
         """
-        if not signature or not signature.startswith("sha256="):
+        if (
+            not self.client_secret
+            or not signature
+            or not signature.startswith("sha256=")
+        ):
             return False
 
         received_mac = signature[7:]  # Strip 'sha256='

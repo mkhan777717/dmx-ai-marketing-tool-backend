@@ -20,12 +20,15 @@ class FacebookOAuthHandler:
             "http://localhost:8000/api/v1/integrations/oauth/callback",
         )
 
-    async def exchange_code(self, auth_code: str) -> dict:
+    async def exchange_code(
+        self, auth_code: str, redirect_uri: str | None = None
+    ) -> dict:
         """Exchanges an authorization code for a short-lived access token, then upgrades it to a long-lived token."""
+        effective_redirect_uri = redirect_uri or self.redirect_uri
         # 1. Exchange for short-lived token
         params = {
             "client_id": self.client_id,
-            "redirect_uri": self.redirect_uri,
+            "redirect_uri": effective_redirect_uri,
             "client_secret": self.client_secret,
             "code": auth_code,
         }

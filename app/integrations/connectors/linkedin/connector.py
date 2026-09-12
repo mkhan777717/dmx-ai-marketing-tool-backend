@@ -1,6 +1,7 @@
 from typing import Any
 
 from app.integrations.base import AbstractConnector
+from app.integrations.connectors.linkedin.exceptions import LinkedInAuthError
 from app.integrations.connectors.linkedin.oauth import LinkedInOAuthHandler
 from app.integrations.connectors.linkedin.publisher import LinkedInPublisher
 from app.integrations.connectors.linkedin.sync import LinkedInSyncEngine
@@ -20,16 +21,18 @@ class LinkedInConnector(AbstractConnector):
         self.client_secret = credentials.get("client_secret", "")
 
         self.oauth_handler = LinkedInOAuthHandler(self.client_id, self.client_secret)
-
-        # Handlers that require access tokens are instantiated when needed
-        # or if the access token is already provided
         self.webhook_handler = LinkedInWebhookHandler(self.client_secret)
 
     async def connect(
-        self, auth_code: str, code_verifier: str | None = None
+        self,
+        auth_code: str,
+        code_verifier: str | None = None,
+        redirect_uri: str | None = None,
     ) -> dict[str, Any]:
         """Exchanges authorization code for tokens and fetches initial metadata."""
-        token_data = await self.oauth_handler.exchange_code(auth_code)
+        token_data = await self.oauth_handler.exchange_code(
+            auth_code, redirect_uri=redirect_uri
+        )
 
         # Fetch initial profile metadata to associate with the connection
         sync_engine = LinkedInSyncEngine(token_data["access_token"])
@@ -37,27 +40,26 @@ class LinkedInConnector(AbstractConnector):
 
         sub = profile_data.get("sub")
         if not sub:
-            from app.integrations.connectors.linkedin.exceptions import (
-                LinkedInAuthError,
-            )
-
             raise LinkedInAuthError(
                 "LinkedIn profile response is missing the required 'sub' identifier."
             )
 
+        profile_name = (
+            profile_data.get("name")
+            or f"{profile_data.get('localizedFirstName', '')} {profile_data.get('localizedLastName', '')}".strip()
+            or "LinkedIn Member"
+        )
+
         return {
             "access_token": token_data["access_token"],
-            "refresh_token": token_data["refresh_token"],
+            "refresh_token": token_data.get("refresh_token"),
             "expires_at": token_data["expires_at"],
             "author_urn": f"urn:li:person:{sub}",
-            "profile_name": f"{profile_data.get('localizedFirstName', '')} {profile_data.get('localizedLastName', '')}".strip(),
+            "profile_name": profile_name,
         }
 
     async def disconnect(self) -> bool:
-        """
-        LinkedIn doesn't have a strict API token revocation endpoint that we need to hit,
-        but we can return True to signify successful local disconnect.
-        """
+        """Returns True to signify successful local disconnect."""
         return True
 
     async def validate(self) -> bool:
@@ -82,8 +84,6 @@ class LinkedInConnector(AbstractConnector):
         self, payload: dict[str, Any], signature: str | None = None
     ) -> dict[str, Any]:
         """Processes incoming webhooks from LinkedIn."""
-        # Note: In a real system the signature verification usually happens at the middleware/dispatcher
-        # But we provide it here as per architecture requirements.
         return self.webhook_handler.process_payload(payload)
 
     def get_capabilities(self) -> IntegrationCapabilities:
@@ -94,14 +94,40 @@ class LinkedInConnector(AbstractConnector):
             supported_actions=[
                 "publish_text",
                 "publish_image",
+                "publish_video",
                 "read_profile",
-                "read_organizations",
             ],
         )
 
-    async def publish(self, author_urn: str, content: str) -> dict[str, Any]:
-        """Helper method to publish content to LinkedIn."""
+    async def publish(
+        self,
+        author_urn: str,
+        content: str,
+        media_binary: bytes | None = None,
+        mime_type: str = "image/jpeg",
+        media_type: str = "text",
+    ) -> str:
+        """Helper method to publish content (text, image, or video) to LinkedIn."""
         if not self.access_token:
             raise ValueError("Access token required for publishing.")
+
         publisher = LinkedInPublisher(self.access_token)
-        return await publisher.publish_text_post(author_urn, content)
+
+        if media_binary and media_type == "video":
+            return await publisher.publish_video_post(
+                author_urn=author_urn,
+                text=content,
+                video_binary=media_binary,
+                mime_type=mime_type,
+            )
+        elif media_binary:
+            return await publisher.publish_image_post(
+                author_urn=author_urn,
+                text=content,
+                image_binary=media_binary,
+                mime_type=mime_type,
+            )
+        else:
+            return await publisher.publish_text_post(
+                author_urn=author_urn, text=content
+            )

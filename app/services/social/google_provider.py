@@ -3,7 +3,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.constants.enums import ApiProvider
+from app.constants.enums import ApiProvider, AssetType
 from app.db.session import AsyncSessionLocal
 from app.integrations.connectors.google.business_profile import (
     GoogleBusinessProfilePublisher,
@@ -43,23 +43,35 @@ class GoogleProvider(BaseSocialProvider):
 
     async def publish_content(
         self,
-        db: AsyncSession,
         account: SocialAccount,
         content: CampaignContent,
+        db: AsyncSession | None = None,
         **kwargs,
     ) -> str:
-        if not account.access_token:
+        # Handle flexible parameter ordering if db is passed as first argument
+        if isinstance(account, AsyncSession):
+            db_arg = account
+            account = content
+            content = db or kwargs.get("content")
+            db = db_arg
+
+        if not account or not account.access_token:
             raise GoogleAuthError("Google SocialAccount missing access token.")
 
-        if not content.body or not content.body.strip():
-            raise GoogleError("Google text publishing requires non-empty body content.")
+        provider_val = (
+            account.provider.value
+            if isinstance(account.provider, ApiProvider)
+            else str(account.provider)
+        )
+        is_youtube = provider_val.upper() in ("YOUTUBE", "YOUTUBE_CHANNEL")
 
-        image_url = None
-        is_video = False
-        if content.assets:
+        # Provider specific checks
+        if is_youtube:
+            if not content.assets or len(content.assets) == 0:
+                raise GoogleError("YouTube publishing requires a VIDEO asset.")
             if len(content.assets) > 1:
                 raise GoogleError(
-                    "Google Provider only supports a single image or video for publishing."
+                    "YouTube Provider only supports a single video for publishing."
                 )
             asset = content.assets[0]
             if not asset.public_url or not asset.public_url.startswith(
@@ -67,20 +79,56 @@ class GoogleProvider(BaseSocialProvider):
             ):
                 raise GoogleError("Asset public_url must be a valid HTTP/HTTPS URL.")
 
-            is_video = bool(asset.mime_type and asset.mime_type.startswith("video/"))
-            is_image = bool(asset.mime_type and asset.mime_type.startswith("image/"))
+            is_video = (
+                getattr(asset, "asset_type", None) == AssetType.VIDEO
+                or getattr(asset, "asset_type", None) == "VIDEO"
+                or bool(asset.mime_type and asset.mime_type.startswith("video/"))
+            )
+            if not is_video:
+                raise GoogleError("YouTube publishing requires a VIDEO asset.")
 
-            if not is_video and not is_image:
+        else:
+            # Google Business Profile requirements
+            if not content.body or not content.body.strip():
                 raise GoogleError(
-                    f"Unsupported MIME type {asset.mime_type}. Only images and videos are supported."
+                    "Google text publishing requires non-empty body content."
                 )
 
-            if is_image:
-                if asset.mime_type not in ["image/jpeg", "image/png", "image/webp"]:
+            image_url = None
+            is_video = False
+            if content.assets:
+                if len(content.assets) > 1:
                     raise GoogleError(
-                        f"Image format {asset.mime_type} is not supported by Google Business Profile."
+                        "Google Provider only supports a single image or video for publishing."
                     )
-                image_url = asset.public_url
+                asset = content.assets[0]
+                if not asset.public_url or not asset.public_url.startswith(
+                    ("http://", "https://")
+                ):
+                    raise GoogleError(
+                        "Asset public_url must be a valid HTTP/HTTPS URL."
+                    )
+
+                is_video = (
+                    getattr(asset, "asset_type", None) == AssetType.VIDEO
+                    or getattr(asset, "asset_type", None) == "VIDEO"
+                    or bool(asset.mime_type and asset.mime_type.startswith("video/"))
+                )
+                is_image = bool(
+                    asset.mime_type and asset.mime_type.startswith("image/")
+                )
+
+                if not is_video and not is_image:
+                    raise GoogleError(
+                        f"Unsupported MIME type {asset.mime_type}. Only images and videos are supported."
+                    )
+
+                if is_image:
+                    if asset.mime_type not in ["image/jpeg", "image/png", "image/webp"]:
+                        raise GoogleError(
+                            f"Image format {asset.mime_type} is not supported by Google Business Profile."
+                        )
+                    image_url = asset.public_url
 
         # Check token expiration
         now_utc = datetime.now(timezone.utc)
@@ -95,9 +143,7 @@ class GoogleProvider(BaseSocialProvider):
                 )
 
             decrypted_refresh = secret_service.decrypt_token(account.refresh_token)
-            credentials = secret_service.get_provider_credentials(
-                ApiProvider.GOOGLE.value
-            )
+            credentials = secret_service.get_provider_credentials(provider_val)
             oauth_handler = GoogleOAuthHandler(
                 client_id=credentials.get("client_id", ""),
                 client_secret=credentials.get("client_secret", ""),
@@ -120,29 +166,37 @@ class GoogleProvider(BaseSocialProvider):
                 try:
                     conn = (
                         await integration_connection_repo.get_by_workspace_and_provider(
-                            session, account.workspace_id, ApiProvider.GOOGLE.value
+                            session, account.workspace_id, provider_val
                         )
                     )
+                    if not conn and provider_val.upper() in ("YOUTUBE", "GOOGLE"):
+                        alt_provider = (
+                            "GOOGLE" if provider_val.upper() == "YOUTUBE" else "YOUTUBE"
+                        )
+                        conn = await integration_connection_repo.get_by_workspace_and_provider(
+                            session, account.workspace_id, alt_provider
+                        )
+
                     soc_account = await social_account_repo.get_by_id(
                         session, id=account.id
                     )
 
-                    if not conn or not soc_account:
+                    if not soc_account:
                         raise GoogleAuthError(
                             "Missing database records for token persistence."
                         )
 
-                    # Update BOTH records in the same dedicated session
-                    conn.access_token = enc_access
-                    conn.refresh_token = enc_refresh
-                    # IntegrationConnection uses naive UTC typically
-                    conn.expires_at = (
-                        new_expires_at.replace(tzinfo=None) if new_expires_at else None
-                    )
+                    if conn:
+                        conn.access_token = enc_access
+                        conn.refresh_token = enc_refresh
+                        conn.expires_at = (
+                            new_expires_at.replace(tzinfo=None)
+                            if new_expires_at
+                            else None
+                        )
 
                     soc_account.access_token = enc_access
                     soc_account.refresh_token = enc_refresh
-                    # SocialAccount uses timezone-aware
                     soc_account.expires_at = new_expires_at
 
                     # Commit BOTH changes together
@@ -160,19 +214,45 @@ class GoogleProvider(BaseSocialProvider):
 
         decrypted_token = secret_service.decrypt_token(account.access_token)
 
-        if is_video:
+        if is_youtube or is_video:
             from app.integrations.connectors.google.youtube import YouTubePublisher
 
             asset = content.assets[0]
             publisher = YouTubePublisher(access_token=decrypted_token)
 
-            # Use body as both title and description for YouTube in MVP
+            # Extract title and description
+            raw_title = (
+                content.title
+                if isinstance(getattr(content, "title", None), str)
+                else None
+            )
+            title = (raw_title or content.body or "Untitled Video").strip()
+            description = (content.body or "").strip()
+
+            # Extract optional metadata
+            privacy_status = "private"
+            tags = None
+            category_id = None
+            if isinstance(content.metadata_, dict):
+                privacy_status = (
+                    content.metadata_.get("privacy_status")
+                    or content.metadata_.get("privacyStatus")
+                    or "private"
+                )
+                tags = content.metadata_.get("tags")
+                category_id = content.metadata_.get(
+                    "category_id"
+                ) or content.metadata_.get("categoryId")
+
             post_id = await publisher.upload_video(
                 asset_url=asset.public_url,
-                title=content.body,
-                description=content.body,
+                title=title,
+                description=description,
                 file_size=asset.file_size,
                 mime_type=asset.mime_type,
+                privacy_status=privacy_status,
+                tags=tags,
+                category_id=category_id,
             )
             return str(post_id)
         else:

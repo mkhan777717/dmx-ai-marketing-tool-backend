@@ -1,3 +1,5 @@
+import uuid
+
 from app.integrations.oauth.manager import OAuthManager
 
 
@@ -110,6 +112,39 @@ def test_google_oauth_url():
 
     assert "accounts.google.com/o/oauth2/v2/auth" in url
     assert "business.manage" in url
+    assert "analytics.readonly" in url
+    assert "adwords" in url
+    assert "webmasters.readonly" in url
+    assert "access_type=offline" in url
+    assert "prompt=consent" in url
+    assert f"state={state}" in url
+
+    # Cleanup
+    OAuthManager.validate_state(state)
+
+
+def test_api_provider_youtube_exists():
+    from app.constants.enums import ApiProvider
+
+    assert ApiProvider.YOUTUBE.value == "YOUTUBE"
+
+
+def test_youtube_oauth_url():
+    workspace_id = "test-ws-id"
+    provider = "youtube"
+    state = OAuthManager.generate_state(workspace_id, provider)
+
+    url = OAuthManager.get_authorization_url(
+        provider=provider,
+        state=state,
+        redirect_uri="http://localhost/callback",
+        client_id="testclient",
+    )
+
+    assert "accounts.google.com/o/oauth2/v2/auth" in url
+    assert "youtube.upload" in url
+    assert "youtube.readonly" in url
+    assert "business.manage" not in url
     assert "access_type=offline" in url
     assert "prompt=consent" in url
     assert f"state={state}" in url
@@ -123,6 +158,7 @@ def test_facebook_oauth_url():
     provider = "facebook"
     state = OAuthManager.generate_state(workspace_id, provider)
 
+    # Test without config_id
     url = OAuthManager.get_authorization_url(
         provider=provider,
         state=state,
@@ -136,6 +172,18 @@ def test_facebook_oauth_url():
     assert "pages_manage_posts" in url
     assert "publish_video" not in url
     assert f"state={state}" in url
+    assert "config_id" not in url
+
+    # Test with config_id
+    url_with_config = OAuthManager.get_authorization_url(
+        provider=provider,
+        state=state,
+        redirect_uri="http://localhost/callback",
+        client_id="fb_client_123",
+        config_id="config_789",
+    )
+
+    assert "config_id=config_789" in url_with_config
 
     # Cleanup
     OAuthManager.validate_state(state)
@@ -146,6 +194,7 @@ def test_instagram_oauth_url():
     provider = "instagram"
     state = OAuthManager.generate_state(workspace_id, provider)
 
+    # Test without config_id
     url = OAuthManager.get_authorization_url(
         provider=provider,
         state=state,
@@ -158,8 +207,56 @@ def test_instagram_oauth_url():
     assert "instagram_basic" in url
     assert "instagram_content_publish" in url
     assert "pages_show_list" in url
+    assert "business_management" in url
     assert "publish_video" not in url
     assert f"state={state}" in url
+    assert "config_id" not in url
+
+    # Test with config_id
+    url_with_config = OAuthManager.get_authorization_url(
+        provider=provider,
+        state=state,
+        redirect_uri="http://localhost/callback",
+        client_id="ig_client_123",
+        config_id="config_ig_789",
+    )
+
+    assert "config_id=config_ig_789" in url_with_config
+
+    # Cleanup
+    OAuthManager.validate_state(state)
+
+
+def test_whatsapp_oauth_url():
+    workspace_id = str(uuid.uuid4())
+    provider = "whatsapp"
+    state = OAuthManager.generate_state(workspace_id, provider)
+
+    # Test without config_id
+    url = OAuthManager.get_authorization_url(
+        provider=provider,
+        state=state,
+        redirect_uri="http://localhost/callback",
+        client_id="wa_client_123",
+    )
+
+    assert "www.facebook.com/v26.0/dialog/oauth" in url
+    assert "client_id=wa_client_123" in url
+    assert "whatsapp_business_management" in url
+    assert "whatsapp_business_messaging" in url
+    assert f"state={state}" in url
+    assert "config_id" not in url
+
+    # Test with config_id
+    url_with_config = OAuthManager.get_authorization_url(
+        provider=provider,
+        state=state,
+        redirect_uri="http://localhost/callback",
+        client_id="wa_client_123",
+        config_id="config_wa_789",
+    )
+
+    assert "config_id=config_wa_789" in url_with_config
 
     # Cleanup
     OAuthManager.validate_state(state)

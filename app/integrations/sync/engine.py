@@ -74,7 +74,7 @@ class SyncEngine:
 
         # Execute the sync via the connector abstraction
         try:
-            sync_result = await connector.sync(sync_type=sync_type)
+            sync_result = await connector.sync(sync_type=sync_type, provider=provider)
         except OAuthTokenError as e:
             logger.warning(
                 f"Token expired for {provider} workspace {workspace_id}. Marking connection EXPIRED."
@@ -133,6 +133,10 @@ class SyncEngine:
                     )
 
         elif provider == "instagram" and "instagram_accounts" in sync_result:
+            if not sync_result["instagram_accounts"]:
+                logger.warning(
+                    f"No Instagram business accounts found for workspace {workspace_id}. Ensure the Facebook Page is linked and the user has granted business_management permissions."
+                )
             for profile in sync_result["instagram_accounts"]:
                 page_access_token = profile.get("page_access_token")
                 if not page_access_token:
@@ -181,6 +185,55 @@ class SyncEngine:
                             "is_active": True,
                         },
                     )
+        elif provider == "whatsapp" and "whatsapp_phone_numbers" in sync_result:
+            for item in sync_result["whatsapp_phone_numbers"]:
+                phone_token = item.get("access_token")
+                phone_number_id = item.get("phone_number_id")
+                if not phone_token or not phone_number_id:
+                    logger.warning(
+                        "WhatsApp record missing access token or phone_number_id, skipping."
+                    )
+                    continue
+
+                existing_accounts = await social_account_repo.get_all(
+                    db,
+                    filters={
+                        "workspace_id": workspace_id,
+                        "provider": ApiProvider.WHATSAPP,
+                        "account_id": phone_number_id,
+                    },
+                )
+
+                encrypted_token = secret_service.encrypt_token(phone_token)
+                account_name = (
+                    item.get("verified_name")
+                    or item.get("display_phone_number")
+                    or "WhatsApp Account"
+                )
+
+                if existing_accounts:
+                    existing = existing_accounts[0]
+                    await social_account_repo.update(
+                        db,
+                        db_obj=existing,
+                        obj_in={
+                            "name": account_name,
+                            "access_token": encrypted_token,
+                            "is_active": True,
+                        },
+                    )
+                else:
+                    await social_account_repo.create(
+                        db,
+                        obj_in={
+                            "workspace_id": workspace_id,
+                            "provider": ApiProvider.WHATSAPP,
+                            "account_id": phone_number_id,
+                            "name": account_name,
+                            "access_token": encrypted_token,
+                            "is_active": True,
+                        },
+                    )
 
         elif provider == "linkedin" and "profile" in sync_result:
             profile = sync_result["profile"]
@@ -203,11 +256,13 @@ class SyncEngine:
                     encrypted_token = secret_service.encrypt_token(decrypted_token)
 
                     account_name = (
-                        f"{profile.get('localizedFirstName', '')} {profile.get('localizedLastName', '')}".strip()
+                        profile.get("name")
+                        or f"{profile.get('localizedFirstName', '')} {profile.get('localizedLastName', '')}".strip()
+                        or f"{profile.get('given_name', '')} {profile.get('family_name', '')}".strip()
                         or "LinkedIn Member"
                     )
 
-                    # 1. Find existing
+                    # 1. Personal Member Profile
                     existing_accounts = await social_account_repo.get_all(
                         db,
                         filters={
@@ -218,7 +273,6 @@ class SyncEngine:
                     )
 
                     if existing_accounts:
-                        # 2. Update existing
                         existing = existing_accounts[0]
                         await social_account_repo.update(
                             db,
@@ -230,7 +284,6 @@ class SyncEngine:
                             },
                         )
                     else:
-                        # 3. Create new
                         await social_account_repo.create(
                             db,
                             obj_in={
@@ -242,6 +295,47 @@ class SyncEngine:
                                 "is_active": True,
                             },
                         )
+
+                    # 2. Company Pages / Organizations
+                    organizations = sync_result.get("organizations", [])
+                    for org in organizations:
+                        org_urn = org.get("organization_urn")
+                        org_name = org.get("name") or f"Company Page ({org_urn})"
+                        if not org_urn:
+                            continue
+
+                        existing_orgs = await social_account_repo.get_all(
+                            db,
+                            filters={
+                                "workspace_id": workspace_id,
+                                "provider": ApiProvider.LINKEDIN,
+                                "account_id": org_urn,
+                            },
+                        )
+
+                        if existing_orgs:
+                            existing = existing_orgs[0]
+                            await social_account_repo.update(
+                                db,
+                                db_obj=existing,
+                                obj_in={
+                                    "name": org_name,
+                                    "access_token": encrypted_token,
+                                    "is_active": True,
+                                },
+                            )
+                        else:
+                            await social_account_repo.create(
+                                db,
+                                obj_in={
+                                    "workspace_id": workspace_id,
+                                    "provider": ApiProvider.LINKEDIN,
+                                    "account_id": org_urn,
+                                    "name": org_name,
+                                    "access_token": encrypted_token,
+                                    "is_active": True,
+                                },
+                            )
 
         elif provider == "twitter" and "profile" in sync_result:
             profile = sync_result["profile"]
@@ -316,16 +410,55 @@ class SyncEngine:
                             },
                         )
 
-        elif provider == "google" and "business_accounts" in sync_result:
-            business_accounts = sync_result["business_accounts"]
-            if not business_accounts:
+        elif (provider in ("google", "youtube")) and (
+            "business_accounts" in sync_result
+            or "youtube_channels" in sync_result
+            or "ga4_properties" in sync_result
+            or "google_ads_customers" in sync_result
+            or "search_console_sites" in sync_result
+        ):
+            business_accounts = sync_result.get("business_accounts", [])
+            youtube_channels = sync_result.get("youtube_channels", [])
+            ga4_properties = sync_result.get("ga4_properties")
+            google_ads_customers = sync_result.get("google_ads_customers")
+            search_console_sites = sync_result.get("search_console_sites")
+
+            current_meta = dict(connection.metadata_info or {})
+            meta_updated = False
+
+            if ga4_properties is not None:
+                current_meta["ga4_properties"] = ga4_properties
+                meta_updated = True
+
+            if google_ads_customers is not None:
+                current_meta["google_ads_customers"] = google_ads_customers
+                meta_updated = True
+
+            if search_console_sites is not None:
+                current_meta["search_console_sites"] = search_console_sites
+                meta_updated = True
+
+            if meta_updated:
+                await integration_connection_repo.update(
+                    db,
+                    db_obj=connection,
+                    obj_in={"metadata_info": current_meta},
+                )
+
+            if (
+                not business_accounts
+                and not youtube_channels
+                and not ga4_properties
+                and not google_ads_customers
+                and not search_console_sites
+            ):
                 logger.warning(
-                    f"No Google business accounts found for workspace {workspace_id}."
+                    f"No Google business accounts, YouTube channels, GA4 properties, Google Ads customers, or Search Console sites found for workspace {workspace_id}."
                 )
 
             if not connection.access_token:
                 logger.warning(
-                    f"IntegrationConnection for Google workspace {workspace_id} missing access token."
+                    f"IntegrationConnection for Google/YouTube workspace {workspace_id} missing access token."
                 )
             else:
                 decrypted_token = secret_service.decrypt_token(connection.access_token)
@@ -394,6 +527,111 @@ class SyncEngine:
                                     "is_active": True,
                                 },
                             )
+
+                for channel in youtube_channels:
+                    channel_id = channel.get("channel_id")
+                    channel_title = channel.get("title") or "YouTube Channel"
+
+                    if not channel_id:
+                        logger.warning("YouTube channel missing channel_id, skipping.")
+                        continue
+
+                    # 1. Find existing
+                    existing_accounts = await social_account_repo.get_all(
+                        db,
+                        filters={
+                            "workspace_id": workspace_id,
+                            "provider": ApiProvider.YOUTUBE,
+                            "account_id": channel_id,
+                        },
+                    )
+
+                    if existing_accounts:
+                        # 2. Update existing
+                        existing = existing_accounts[0]
+                        await social_account_repo.update(
+                            db,
+                            db_obj=existing,
+                            obj_in={
+                                "name": channel_title,
+                                "access_token": encrypted_token,
+                                "refresh_token": encrypted_refresh_token,
+                                "expires_at": connection.expires_at,
+                                "is_active": True,
+                            },
+                        )
+                    else:
+                        # 3. Create new
+                        await social_account_repo.create(
+                            db,
+                            obj_in={
+                                "workspace_id": workspace_id,
+                                "provider": ApiProvider.YOUTUBE,
+                                "account_id": channel_id,
+                                "name": channel_title,
+                                "access_token": encrypted_token,
+                                "refresh_token": encrypted_refresh_token,
+                                "expires_at": connection.expires_at,
+                                "is_active": True,
+                            },
+                        )
+
+        elif provider == "slack" and "channels" in sync_result:
+            channels = sync_result.get("channels", [])
+            if not channels:
+                logger.warning(f"No Slack channels found for workspace {workspace_id}.")
+
+            if not connection.access_token:
+                logger.warning(
+                    f"IntegrationConnection for Slack workspace {workspace_id} missing access token."
+                )
+            else:
+                decrypted_token = secret_service.decrypt_token(connection.access_token)
+                encrypted_token = secret_service.encrypt_token(decrypted_token)
+
+                for ch in channels:
+                    ch_id = ch.get("id")
+                    ch_name = ch.get("name") or "Slack Channel"
+
+                    if not ch_id:
+                        logger.warning("Slack channel missing 'id', skipping.")
+                        continue
+
+                    # 1. Find existing
+                    existing_accounts = await social_account_repo.get_all(
+                        db,
+                        filters={
+                            "workspace_id": workspace_id,
+                            "provider": ApiProvider.SLACK,
+                            "account_id": ch_id,
+                        },
+                    )
+
+                    if existing_accounts:
+                        # 2. Update existing
+                        existing = existing_accounts[0]
+                        await social_account_repo.update(
+                            db,
+                            db_obj=existing,
+                            obj_in={
+                                "name": ch_name,
+                                "access_token": encrypted_token,
+                                "is_active": True,
+                            },
+                        )
+                    else:
+                        # 3. Create new
+                        await social_account_repo.create(
+                            db,
+                            obj_in={
+                                "workspace_id": workspace_id,
+                                "provider": ApiProvider.SLACK,
+                                "account_id": ch_id,
+                                "name": ch_name,
+                                "access_token": encrypted_token,
+                                "is_active": True,
+                            },
+                        )
 
         return sync_result
 

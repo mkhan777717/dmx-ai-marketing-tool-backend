@@ -36,6 +36,25 @@ async def test_facebook_valid_token():
 
 
 @pytest.mark.asyncio
+async def test_facebook_perform_sync_metric_excludes_profile():
+    engine = FacebookSyncEngine("valid_token")
+
+    with (
+        patch.object(
+            engine, "fetch_profile", new_callable=AsyncMock
+        ) as mock_fetch_profile,
+        patch.object(engine, "fetch_pages", new_callable=AsyncMock) as mock_fetch_pages,
+    ):
+        mock_fetch_profile.return_value = {"id": "123", "name": "Jane"}
+        mock_fetch_pages.return_value = []  # User has no pages
+
+        result = await engine.perform_sync("full")
+
+        assert result["records_synced"] == 0
+        assert result["profile"]["id"] == "123"
+
+
+@pytest.mark.asyncio
 async def test_facebook_invalid_expired_token():
     engine = FacebookSyncEngine("expired_token")
     # Meta returns OAuthException on invalid tokens

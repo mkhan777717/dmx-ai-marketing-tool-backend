@@ -228,6 +228,9 @@ async def test_publish_content_with_video_success(
             description="Hello Google!",
             file_size=1024 * 1024 * 10,
             mime_type="video/mp4",
+            privacy_status="private",
+            tags=None,
+            category_id=None,
         )
         assert result == "youtube_video_123"
 

@@ -21,7 +21,7 @@ class SocialProviderFactory:
             return InstagramProvider()
         elif provider_type == ApiProvider.LINKEDIN:
             return LinkedInProvider()
-        elif provider_type == ApiProvider.GOOGLE:
+        elif provider_type in (ApiProvider.GOOGLE, ApiProvider.YOUTUBE):
             from app.services.social.google_provider import GoogleProvider
 
             return GoogleProvider()
@@ -29,6 +29,14 @@ class SocialProviderFactory:
             from app.services.social.twitter_provider import TwitterProvider
 
             return TwitterProvider()
+        elif provider_type == ApiProvider.WHATSAPP:
+            from app.services.social.whatsapp_provider import WhatsAppProvider
+
+            return WhatsAppProvider()
+        elif provider_type == ApiProvider.SLACK:
+            from app.services.social.slack_provider import SlackProvider
+
+            return SlackProvider()
         else:
             # Fallback for unconnected or unimplemented
             return MockSocialProvider()

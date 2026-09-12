@@ -1,4 +1,5 @@
 from celery import Celery
+from celery.schedules import crontab
 from kombu import Exchange, Queue
 
 from app.config.settings import settings
@@ -40,13 +41,12 @@ celery_app.conf.update(
     },
 )
 
-# Placeholder for Celery Beat Schedules
+# Celery Beat Schedules
 celery_app.conf.beat_schedule = {
-    # Example Schedule:
-    # "cleanup_analytics": {
-    #     "task": "app.infrastructure.celery.tasks.cleanup.analytics_cleanup",
-    #     "schedule": 86400.0, # 24 hours
-    # },
+    "meta-token-renewal-daily": {
+        "task": "integration.meta_token_renewal",
+        "schedule": crontab(hour=2, minute=0),
+    },
 }
 # Explicitly import Celery task modules
 celery_app.conf.imports = (

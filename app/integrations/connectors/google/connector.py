@@ -1,20 +1,23 @@
+import logging
 from typing import Any
 
 from app.integrations.base import AbstractConnector
+from app.integrations.connectors.google.ads import GoogleAdsService
 from app.integrations.connectors.google.analytics import GoogleAnalyticsService
 from app.integrations.connectors.google.business_profile import (
     GoogleBusinessProfilePublisher,
 )
 from app.integrations.connectors.google.calendar import GoogleCalendarService
 from app.integrations.connectors.google.drive import GoogleDriveService
-
-# Import sub-service stubs
 from app.integrations.connectors.google.gmail import GmailService
 from app.integrations.connectors.google.oauth import GoogleOAuthHandler
+from app.integrations.connectors.google.search_console import GoogleSearchConsoleService
 from app.integrations.connectors.google.sync import GoogleSyncEngine
 from app.integrations.connectors.google.webhook import GoogleWebhookHandler
 from app.integrations.connectors.google.youtube import YouTubePublisher
 from app.integrations.interfaces import IntegrationCapabilities
+
+logger = logging.getLogger(__name__)
 
 
 class GoogleConnector(AbstractConnector):
@@ -23,17 +26,30 @@ class GoogleConnector(AbstractConnector):
     Serves as the foundation and OAuth hub for all Google-related APIs.
     """
 
-    def __init__(self, credentials: dict[str, str], access_token: str | None = None):
+    def __init__(
+        self,
+        credentials: dict[str, str],
+        access_token: str | None = None,
+        provider_name: str | None = None,
+    ):
         super().__init__(credentials, access_token)
+        self.provider_name = (provider_name or "google").lower()
         self.client_id = credentials.get("client_id", "")
         self.client_secret = credentials.get("client_secret", "")
 
         self.oauth_handler = GoogleOAuthHandler(self.client_id, self.client_secret)
         self.webhook_handler = GoogleWebhookHandler(self.client_secret)
 
-    async def connect(self, auth_code: str) -> dict[str, Any]:
+    async def connect(
+        self,
+        auth_code: str,
+        code_verifier: str | None = None,
+        redirect_uri: str | None = None,
+    ) -> dict[str, Any]:
         """Exchanges authorization code for tokens and fetches initial metadata."""
-        token_data = await self.oauth_handler.exchange_code(auth_code)
+        token_data = await self.oauth_handler.exchange_code(
+            auth_code, redirect_uri=redirect_uri
+        )
 
         sync_engine = GoogleSyncEngine(token_data["access_token"])
         profile_data = await sync_engine.fetch_profile()
@@ -67,12 +83,13 @@ class GoogleConnector(AbstractConnector):
         """Refreshes the access token using the stored refresh token."""
         return await self.oauth_handler.refresh_access_token(refresh_token)
 
-    async def sync(self, sync_type: str = "full") -> dict[str, Any]:
-        """Synchronizes data from Google Profile."""
+    async def sync(self, sync_type: str = "full", **kwargs) -> dict[str, Any]:
+        """Synchronizes data from Google Profile / YouTube."""
         if not self.access_token:
             raise ValueError("Access token required for sync.")
+        provider = kwargs.get("provider") or getattr(self, "provider_name", "google")
         sync_engine = GoogleSyncEngine(self.access_token)
-        return await sync_engine.perform_sync(sync_type)
+        return await sync_engine.perform_sync(sync_type=sync_type, provider=provider)
 
     async def webhook(
         self, payload: dict[str, Any], signature: str | None = None
@@ -127,3 +144,19 @@ class GoogleConnector(AbstractConnector):
         if not self.access_token:
             raise ValueError("Access token required.")
         return GoogleAnalyticsService(self.access_token)
+
+    def get_google_ads_service(
+        self, developer_token: str | None = None, login_customer_id: str | None = None
+    ) -> GoogleAdsService:
+        if not self.access_token:
+            raise ValueError("Access token required.")
+        return GoogleAdsService(
+            self.access_token,
+            developer_token=developer_token,
+            login_customer_id=login_customer_id,
+        )
+
+    def get_search_console_service(self) -> GoogleSearchConsoleService:
+        if not self.access_token:
+            raise ValueError("Access token required.")
+        return GoogleSearchConsoleService(self.access_token)
