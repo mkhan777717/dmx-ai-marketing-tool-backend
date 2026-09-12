@@ -7,6 +7,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from sqlalchemy import select
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.constants.enums import RoleType
 from app.db.session import AsyncSessionLocal
 from app.models.permission import Permission
@@ -15,6 +17,8 @@ from app.models.role_permission import RolePermission
 
 RESOURCES = [
     "Workspace",
+    "Workspace Member",
+    "Workspace Invite",
     "Campaign",
     "Analytics",
     "Billing",
@@ -23,13 +27,13 @@ RESOURCES = [
     "Assets",
     "Content",
     "Notifications",
-    "Members",
     "Reports",
     "Settings",
     "Social Accounts",
     "Integration",
     "API Keys",
     "Audit Logs",
+    "System",
 ]
 
 ACTIONS = ["create", "read", "update", "delete", "manage", "publish"]
@@ -44,102 +48,117 @@ ROLES_SETUP = {
 }
 
 
-async def seed_rbac():
-    async with AsyncSessionLocal() as db:
-        print("Starting RBAC seed...")
+async def seed_rbac(db_session: AsyncSession | None = None):
+    if db_session:
+        await _seed_rbac_impl(db_session)
+    else:
+        async with AsyncSessionLocal() as db:
+            await _seed_rbac_impl(db)
 
-        # 1. Create Permissions
-        print("Creating Permissions...")
-        created_permissions = []
-        for resource in RESOURCES:
-            res_slug = resource.lower().replace(" ", "_")
 
-            for action in ACTIONS:
-                name = f"{res_slug}.{action}"
-                # Check if exists
-                stmt = select(Permission).where(Permission.name == name)
-                result = await db.execute(stmt)
-                perm = result.scalar_one_or_none()
+async def _seed_rbac_impl(db: AsyncSession):
+    print("Starting RBAC seed...")
 
-                if not perm:
-                    perm = Permission(
-                        name=name,
-                        resource=res_slug,
-                        action=action,
-                        description=f"Can {action} {resource}",
-                        is_system=True,
-                    )
-                    db.add(perm)
-                    created_permissions.append(perm)
+    # 1. Create Permissions
+    print("Creating Permissions...")
+    created_permissions = []
+    for resource in RESOURCES:
+        res_slug = resource.lower().replace(" ", "_")
 
-        await db.flush()
-
-        # Fetch all permissions to map them
-        stmt = select(Permission)
-        result = await db.execute(stmt)
-        all_permissions = result.scalars().all()
-
-        # 2. Create Roles
-        print("Creating System Roles...")
-        roles = {}
-        for role_name, role_data in ROLES_SETUP.items():
-            stmt = select(Role).where(Role.name == role_name, Role.is_system.is_(True))
-            result = await db.execute(stmt)
-            role = result.scalar_one_or_none()
-
-            if not role:
-                role = Role(
-                    name=role_name,
-                    description=role_data["description"],
-                    role_type=RoleType.SYSTEM,
-                    is_system=True,
-                    workspace_id=None,
+        for action in ACTIONS:
+            name = f"{res_slug}.{action}"
+            # Check if exists by name OR (resource, action)
+            stmt = select(Permission).where(
+                (Permission.name == name)
+                | (
+                    (Permission.resource == res_slug)
+                    & (Permission.action == action)
                 )
-                db.add(role)
-            roles[role_name] = role
+            )
+            result = await db.execute(stmt)
+            perm = result.scalars().first()
 
-        await db.flush()
+            if not perm:
+                perm = Permission(
+                    name=name,
+                    resource=res_slug,
+                    action=action,
+                    description=f"Can {action} {resource}",
+                    is_system=True,
+                )
+                db.add(perm)
+                created_permissions.append(perm)
+            elif perm.name != name:
+                perm.name = name
 
-        # 3. Map Permissions to Roles
-        print("Mapping Role Permissions...")
-        for role_name, role in roles.items():
-            for perm in all_permissions:
-                assign = False
+    await db.flush()
 
-                if role_name == "Owner":
-                    assign = True  # Owner gets everything
-                elif role_name == "Admin":
-                    if perm.resource != "billing" or perm.action != "manage":
+    # Fetch all permissions to map them
+    stmt = select(Permission)
+    result = await db.execute(stmt)
+    all_permissions = result.scalars().all()
+
+    # 2. Create Roles
+    print("Creating System Roles...")
+    roles = {}
+    for role_name, role_data in ROLES_SETUP.items():
+        stmt = select(Role).where(Role.name == role_name, Role.is_system.is_(True))
+        result = await db.execute(stmt)
+        role = result.scalar_one_or_none()
+
+        if not role:
+            role = Role(
+                name=role_name,
+                description=role_data["description"],
+                role_type=RoleType.SYSTEM,
+                is_system=True,
+                workspace_id=None,
+            )
+            db.add(role)
+        roles[role_name] = role
+
+    await db.flush()
+
+    # 3. Map Permissions to Roles
+    print("Mapping Role Permissions...")
+    for role_name, role in roles.items():
+        for perm in all_permissions:
+            assign = False
+
+            if role_name == "Owner":
+                assign = True  # Owner gets everything
+            elif role_name == "Admin":
+                if perm.resource != "billing" or perm.action != "manage":
+                    assign = True
+            elif role_name == "Editor":
+                if perm.resource in ["campaign", "content", "assets", "brand_kit"]:
+                    if perm.action in ["create", "read", "update", "publish"]:
                         assign = True
-                elif role_name == "Editor":
-                    if perm.resource in ["campaign", "content", "assets", "brand_kit"]:
-                        if perm.action in ["create", "read", "update", "publish"]:
-                            assign = True
-                    elif perm.action == "read":
-                        assign = True
-                elif role_name == "Viewer":
-                    if perm.action == "read":
-                        assign = True
-                elif role_name == "Client":
-                    if (
-                        perm.resource in ["reports", "analytics", "campaign"]
-                        and perm.action == "read"
-                    ):
-                        assign = True
+                elif perm.action == "read":
+                    assign = True
+            elif role_name == "Viewer":
+                if perm.action == "read":
+                    assign = True
+            elif role_name == "Client":
+                if (
+                    perm.resource in ["reports", "analytics", "campaign"]
+                    and perm.action == "read"
+                ):
+                    assign = True
 
-                if assign:
-                    # Check if already mapped
-                    stmt = select(RolePermission).where(
-                        RolePermission.role_id == role.id,
-                        RolePermission.permission_id == perm.id,
-                    )
-                    result = await db.execute(stmt)
-                    if not result.scalar_one_or_none():
-                        rp = RolePermission(role_id=role.id, permission_id=perm.id)
-                        db.add(rp)
+            if assign:
+                # Check if already mapped
+                stmt = select(RolePermission).where(
+                    RolePermission.role_id == role.id,
+                    RolePermission.permission_id == perm.id,
+                )
+                result = await db.execute(stmt)
+                if not result.scalar_one_or_none():
+                    rp = RolePermission(role_id=role.id, permission_id=perm.id)
+                    db.add(rp)
 
-        await db.commit()
-        print("RBAC seed completed successfully.")
+    await db.commit()
+    print("RBAC seed completed successfully.")
 
 
 if __name__ == "__main__":
